@@ -55,17 +55,52 @@ def move(x, forward=True, stop_action="brake"):
 
 cl_top.mode='COL-REFLECT'
 
-speedl = 300
-speedr = 300
+
+
+while True:
+    speedl = 300
+    speedr = 300
+    
+    left = 0 if cl_left.value() > 50 else 1
+    right = 0 if cl_right.value() > 50 else 1
+    top = 0 if cl_top.value() > 50 else 1
+
+    value = z = str(left) + str(top) + str(right)
+
+    if value == '000':
+        pass
+    elif value == '001':
+        speedr = 0
+    elif value == '010':
+        pass
+    elif value == '011':
+        # still undefined, so we spin to see it live if the case happens
+        pass
+    elif value == '100':
+        speedl = 0
+    elif value == '101':
+        #! could also be right
+        speedl = 0
+    elif value == '110':
+        # still undefined, so we spin to see it live if the case happens
+        pass
+    elif value == '111':
+        #! could also be right and top
+        speedl = 0
+    
+    mB.run_timed(time_sp = 200, speed_sp= speedl)
+    mA.run_timed(time_sp = 200, speed_sp= speedr)
+    
+
 while True:
 
     # intersect (3)
     if cl_left.value() < 50 and cl_right.value() < 50 and cl_top.value() > 50:
         move(1)
         if random.randint(1, 2) % 2 == 0:
-            rotate_degree_rpm(90)
+            rotate_degree_rpm(10)
         else: 
-            rotate_degree_rpm(90, -1)
+            rotate_degree_rpm(10, -1)
         sleep(0.5 )
     
     # big intersect (4)
