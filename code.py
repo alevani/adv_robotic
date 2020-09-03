@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from ev3dev.ev3 import *
+from ev3dev2.sound import Sound
 import math
 import random
 from time import sleep
@@ -55,91 +56,84 @@ def move(x, forward=True, stop_action="brake"):
 
 cl_top.mode='COL-REFLECT'
 
-
-
-while True:
-    speedl = 300
-    speedr = 300
-    
+def get_sensor_values():
     left = 0 if cl_left.value() > 50 else 1
     right = 0 if cl_right.value() > 50 else 1
     top = 0 if cl_top.value() > 50 else 1
+    return left, right, top
 
-    value = z = str(left) + str(top) + str(right)
+def do_while(previous, speedr, speedl):
+    value = previous
+    while value != '010':
+        mB.run_timed(time_sp = 200, speed_sp= speedl)
+        mA.run_timed(time_sp = 200, speed_sp= speedr)
+        
+        left, right, top = get_sensor_values()
+        value = str(left) + str(top) + str(right)
+
+def forward():
+    mB.run_timed(time_sp = 200, speed_sp= 300, stop_action= "brake")
+    mA.run_timed(time_sp = 200, speed_sp= 300,stop_action= "brake")
+
+def mario():
+    sound = Sound()
+    
+    sound.play_tone(1500, 0.1)
+    sound.play_tone(1500, 0.1)
+    sleep(0.2)
+    sound.play_tone(1500, 0.1)
+    sleep(0.1)
+    sound.play_tone(1000, 0.1)
+    sound.play_tone(1500, 0.1)
+    sleep(0.2)
+    sound.play_tone(2000, 0.1)
+    sleep(0.3)
+    sound.play_tone(500, 0.1)
+
+    
+#mario()
+
+# Wonder around
+while True:
+    f = False
+    speedl = 300
+    speedr = 300
+    
+    left, right, top = get_sensor_values()
+    value = str(left) + str(top) + str(right)
 
     if value == '000':
-        pass
+        f = True
+        forward()
+    
     elif value == '001':
         speedr = 0
+    
     elif value == '010':
-        pass
+        f = True
+        forward()
+    
     elif value == '011':
-        # still undefined, so we spin to see it live if the case happens
-        pass
+        speedr = 0
+    
     elif value == '100':
         speedl = 0
+    
     elif value == '101':
         #! could also be right
-        speedl = 0
+        speedr = 0
+    
     elif value == '110':
-        # still undefined, so we spin to see it live if the case happens
-        pass
+        speedl = 0
+    
     elif value == '111':
         #! could also be right and top
         speedl = 0
     
-    mB.run_timed(time_sp = 200, speed_sp= speedl)
-    mA.run_timed(time_sp = 200, speed_sp= speedr)
-    
-
-while True:
-
-    # intersect (3)
-    if cl_left.value() < 50 and cl_right.value() < 50 and cl_top.value() > 50:
-        move(1)
-        if random.randint(1, 2) % 2 == 0:
-            rotate_degree_rpm(10)
-        else: 
-            rotate_degree_rpm(10, -1)
-        sleep(0.5 )
-    
-    # big intersect (4)
-    if cl_left.value() < 50 and cl_right.value() < 50 and cl_top.value() < 50:
-        move(1)
-        value = random.randint(1, 3)
-        if value == 1:
-            while cl_top.value() < 50:
-                rotate_degree_rpm(10)
-        elif value == 2: 
-            while cl_top.value() < 50:
-                rotate_degree_rpm(10, -1)
-        else:
-            move(3)
-        sleep(0.5)
-
-    if cl_left.value() < 50:
-        speedl = 200
-    else:
-        speedl = 300
-    
-    if cl_right.value() < 50:
-        speedr = 200
-    else:
-        speedr = 300
-    
-    mB.run_timed(time_sp = 200, speed_sp= speedr)
-    mA.run_timed(time_sp = 200, speed_sp= speedl)
-    mB.wait_while('running')
-    mA.wait_while('running')
-    sleep(0.2)
-    mA.stop()
-    mB.stop()
-
-
-
-# rotate_degree_rpm(85)
-# move(83.5, forward= False)
-# rotate_degree_rpm(80, -1)
-# move(7.5, forward= False)
-
-#(0 to 30 0 black tape, 70 to 100 = reflective surface)
+    # Used to that it turns all the way before continuing any action
+    while value != '010' and f == False:
+        mB.run_timed(time_sp = 200, speed_sp= speedl,stop_action= "brake")
+        mA.run_timed(time_sp = 200, speed_sp= speedr,stop_action= "brake")
+        
+        left, right, top = get_sensor_values()
+        value = str(left) + str(top) + str(right)
