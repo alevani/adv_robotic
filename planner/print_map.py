@@ -38,12 +38,12 @@ def print_map(map):
                 print(red('⬛'), end='')
             elif x == BLOCK.ROBOT:
                 print('🤖', end='')
-            # elif x == BLOCK.DIAM:
-            #     print('💎', end='')
-            # elif x == BLOCK.DIAM_ON_GOAL:
-            #     print('🏁', end='')
-            # elif x == BLOCK.GOAL:
-            #     print(green('⬛'), end='')
+            elif x == BLOCK.DIAM:
+                print('💎', end='')
+            elif x == BLOCK.DIAM_ON_GOAL:
+                print('🏁', end='')
+            elif x == BLOCK.GOAL:
+                print(green('⬛'), end='')
             elif x == BLOCK.ROAD:
                 print('  ', end='')
             else:
