@@ -31,26 +31,34 @@ def green(text):
 
 
 
-def print_map(map):
+def render_map(map, with_color=True):
+    res = ""
     for col in map:
         for x in col:
             if x == BLOCK.WALL:
-                print(red('⬛'), end='')
+                if with_color:
+                    res += red('🔥')
+                else:
+                    res += '🔥'
             elif x == BLOCK.ROBOT:
-                print('🤖', end='')
+                res += '🤖'
             elif x == BLOCK.DIAM:
-                print('💎', end='')
+                res += '💎'
             elif x == BLOCK.DIAM_ON_GOAL:
-                print('🏁', end='')
+                res += '✅'
             elif x == BLOCK.GOAL:
-                print(green('⬛'), end='')
+                if with_color:
+                    res += green('🏁')
+                else:
+                    res += '🏁'
             elif x == BLOCK.ROAD:
-                print('  ', end='')
+                res += '  '
             else:
-                print('  ', end='')
-        print('')
+                res += '??'
+        res += '\n'
+    return res
 
-def test_print_map():
+def test_render_map():
     init_map   =  [[1,1,1,1,1,1,1,1,1],
                    [1,4,0,0,0,0,0,0,1],
                    [1,5,1,3,1,0,1,0,1],
@@ -61,5 +69,5 @@ def test_print_map():
                    [1,6,0,0,0,0,0,0,1],
                    [1,1,1,1,1,1,1,1,1]]
 
-    print_map(init_map)
+    render_map(init_map)
 
