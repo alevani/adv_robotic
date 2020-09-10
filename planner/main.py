@@ -72,18 +72,18 @@ def try_move_agent(dir, apos, cur_map) ->  tuple:
     next_ = get_type_surrounding(dir, apos, cur_map)
 
     if next_ == BLOCK.ROAD or next_ == BLOCK.GOAL:
-        return move_agent(dir, apos)
+        return (move_agent(dir, apos), True)
 
     elif next_ == BLOCK.WALL:
-        return apos
+        return (apos, False)
 
     elif next_ == BLOCK.DIAM or next_ == BLOCK.DIAM_ON_GOAL:
         diam_pos = move_agent(dir, apos)
-        next_diam_pos = try_move_agent(dir,  diam_pos, cur_map)
+        next_diam_pos, _ = try_move_agent(dir,  diam_pos, cur_map)
         if next_diam_pos == diam_pos:
-            return apos
+            return (apos, False)
         else:
-            return move_agent(dir, apos)
+            return (move_agent(dir, apos), True)
 
         
     elif next_ == BLOCK.ROBOT:
@@ -110,9 +110,9 @@ def next_state(dir, agents):
     rpos = agents['robot'][0]
     cur_map = map_parser.add_agent_to_map(agents, STATIC_MAP)
 
-    new_rpos = try_move_agent(dir, rpos , cur_map)
+    new_rpos, _ = try_move_agent(dir, rpos , cur_map)
     if new_rpos == rpos:
-        return agents
+        return (agents, False)
     else:
         new_agents = deepcopy(agents)
         new_agents['robot'][0] = new_rpos
@@ -124,7 +124,7 @@ def next_state(dir, agents):
             new_agents['diams'].remove(diam)
             new_agents['diams'].append(new_diam)
 
-        return new_agents
+        return (new_agents, True)
 
 def diam_on_corner(cur_map) -> bool:
     H = len(cur_map)
@@ -180,8 +180,6 @@ def calc_manhattan( p1, p2):
 def remaining_diams(diams, map):
     return [ d for d in diams if map[d[0]][d[1]] != BLOCK.GOAL ]
 
-
-
 def heuristic2(agents, goals=GOALS):
     debug(goals)
     diams_pos = agents['diams']
@@ -205,6 +203,41 @@ def hash_agent(agents):
     r2 = tuple(agents['diams'])
     return hash((*r1, *r2))
 
+visited = [] # List to keep track of visited nodes.
+queue = []     #Initialize a queue
+
+def bfs( agents):
+  visited.append(agents)
+  queue.append(agents)
+
+  while queue:
+    agents = queue.pop(0)
+    cur_map = map_parser.add_agent_to_map(agents, STATIC_MAP)
+    debug(print_map.render_map(cur_map))
+    debug(agents)
+    if map_parser.remove_robot_map(cur_map) == FINAL_MAP:
+        SOLUTIONS.append(agents)
+        debug(SOLUTIONS)
+        input("enter to continue")
+
+    elif diam_on_corner(cur_map):
+        continue
+    elif diam_on_empty_edge(cur_map):
+        continue
+
+    neighbours = []
+    for d in DIRS:
+        new_agents, has_changed = next_state(d, agents)
+        if has_changed:
+            neighbours.append(new_agents)
+
+    # sort by heuristic here
+    for neighbour in neighbours:
+      if neighbour not in visited:
+        visited.append(neighbour)
+        queue.append(neighbour)
+
+# Driver Code
 def rec_tick(agents, path='', it=0):
     cur_map = map_parser.add_agent_to_map(agents, STATIC_MAP)
     print(it, path)
@@ -229,7 +262,7 @@ def rec_tick(agents, path='', it=0):
         candidats =[]
         for d in DIRS:
             new_path = path + d
-            new_agents = next_state(d, agents)
+            new_agents, _ = next_state(d, agents)
 
             SHORTEST_PATH_TO_STATE[hash_agent(new_agents)].append(new_path)
 
@@ -289,7 +322,7 @@ def curse(agents):
                 dir = None
 
             if dir:
-                new_agents = next_state(dir, agents)
+                new_agents, _ = next_state(dir, agents)
                 agents = deepcopy(new_agents)
             cur_map = map_parser.add_agent_to_map(agents, STATIC_MAP)
 
@@ -346,6 +379,11 @@ if __name__ == '__main__':
     PREVIOUS_STATES.append(AGENTS)
     if sys.argv[1] == 'step':
         step(AGENTS)
+
+    elif sys.argv[1] == 'bfs':
+        sys.setrecursionlimit(10**6)
+        bfs(AGENTS)
+
     elif sys.argv[1] == 'ia':
         sys.setrecursionlimit(10**6)
 
