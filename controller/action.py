@@ -11,6 +11,8 @@ cl_top = ColorSensor('in2')
 cl_left = ColorSensor('in3')
 cl_right = ColorSensor('in4')
 cl_top.mode = 'COL-REFLECT'
+cl_right.mode = 'COL-REFLECT'
+cl_left.mode = 'COL-REFLECT'
 
 
 #! Maybe here we will need to implement:
@@ -22,8 +24,28 @@ cl_top.mode = 'COL-REFLECT'
 #TODO problem with the robot not pushing the cane in the center of the axis
 #! try: but the top sensor aligned to the two others
 #! it could work now that we don't use it to detect intesect anymore
-sequence = [0, 1, 0, 3, 2, 2, 2, 0]
+#? solved by putting the sensor higher, it actually works well but very scary.
+#! no we can't actually go straight on edges because the sensors fuck. 
+#! we might need to add the top sensor again but I don't remeber why I 
+#! Deleted it in the first place...
+#TODO but back the top sensor so we can 
+sequence = [1, 0, 3, 2, 2, 2, 0, 3 , 2, 2, 2 ,0 ,3, 2, 2, 2 , 0 ,3]
+# sequence = [0,3,3,3,3,3]
+# sequence = [0,0,0]
 
+
+
+def calculate_cm_rpm(x):
+    # 175 being the tire circonference in mm
+    # 360 because the function needs degrees
+    return x * 10 / 175 * 360
+
+def rotate_degree_rpm(a, direction = 1):
+    
+    # 125 Being the distance between the two half of the wheels
+    mB.run_to_rel_pos(position_sp= direction * calculate_cm_rpm(125 * math.pi / 10) * (a / 360), speed_sp=450)
+    mA.run_to_rel_pos(position_sp= -1 * direction * calculate_cm_rpm(125 * math.pi / 10)  * (a / 360), speed_sp=450)
+    sleep(1)
 
 def run(speedl=300, speedr=300, f=False):
     time_sp = 200
@@ -40,7 +62,8 @@ def run(speedl=300, speedr=300, f=False):
 def get_sensor_values(use_top=True):
     left = 0 if cl_left.value() > 50 else 1
     right = 0 if cl_right.value() > 50 else 1
-    top = 0 if cl_top.value() > 50 else 1
+    #top = 0 if cl_top.value() > 50 else 1
+    top = 0 if cl_top.value() >= 1 else 1
 
     if use_top:
         return str(left) + str(top) + str(right)
@@ -74,27 +97,28 @@ def perform_action(speedl, speedr, value, f):
 
 # while goal no reach ?
 for to in sequence:
+    wait_for_intersect()
+    
     forward = False
     speedl = 300
     speedr = 300
-
     value = get_sensor_values()
 
     if to == 0:  # Forward
         forward = True
-        pass
     elif to == 1:  #  Right turn
         speedr = 0
     elif to == 2:  # Left turn
         speedl = 0
     elif to == 3:  # Turn around (180)
         # Run backward a little so it does not move the can when rotating
-        # mB.run_timed(time_sp = 200, speed_sp= -300)
-        # mA.run_timed(time_sp = 200, speed_sp= -300)
-        # mB.wait_while('running')
-        # mA.wait_while('running')
-        speedl = 300
-        speedr = -300
+        mB.run_timed(time_sp = 600, speed_sp= -300)
+        mA.run_timed(time_sp = 600, speed_sp= -300)
+        sleep(0.7)
+        rotate_degree_rpm(20)
 
+        speedr = -300
+        # value = '00'
+    
     perform_action(speedl, speedr, value, forward)
-    wait_for_intersect()
+    
