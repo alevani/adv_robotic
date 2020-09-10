@@ -207,35 +207,43 @@ visited = [] # List to keep track of visited nodes.
 queue = []     #Initialize a queue
 
 def bfs( agents):
-  visited.append(agents)
-  queue.append(agents)
+    visited.append(agents)
+    queue.append((agents, ''))
 
-  while queue:
-    agents = queue.pop(0)
-    cur_map = map_parser.add_agent_to_map(agents, STATIC_MAP)
-    debug(print_map.render_map(cur_map))
-    debug(agents)
-    if map_parser.remove_robot_map(cur_map) == FINAL_MAP:
-        SOLUTIONS.append(agents)
-        debug(SOLUTIONS)
-        input("enter to continue")
+    while queue:
+        agents, path = queue.pop(0)
+        cur_map = map_parser.add_agent_to_map(agents, STATIC_MAP)
+        debug(print_map.render_map(cur_map))
+        debug(agents)
+        if map_parser.remove_robot_map(cur_map) == FINAL_MAP:
+            SOLUTIONS.append(agents)
+            debug(SOLUTIONS)
+            input("enter to continue")
+        elif diam_on_corner(cur_map):
+            continue
+        elif diam_on_empty_edge(cur_map):
+            continue
+        else:
+            neighbours = []
+            for d in DIRS:
+                 new_agents, has_changed = next_state(d, agents)
+                 if has_changed:
+                   new_path = path + d
+                   neighbours.append((new_agents, new_path))
+            # sort by heuristic here
+            for neighbour, path in neighbours:
+                if neighbour not in visited:
+                    visited.append(neighbour)
+                    queue.append((neighbour, path))
+                    SHORTEST_PATH_TO_STATE[hash_agent(neighbour)].append(path)
 
-    elif diam_on_corner(cur_map):
-        continue
-    elif diam_on_empty_edge(cur_map):
-        continue
+    debug("*** FINISHED ***")
+    for agents in SOLUTIONS:
+        debug("---")
+        paths = SHORTEST_PATH_TO_STATE[hash_agent(agents)]
+        debug(sorted(paths, key=lambda x: len(x)))
 
-    neighbours = []
-    for d in DIRS:
-        new_agents, has_changed = next_state(d, agents)
-        if has_changed:
-            neighbours.append(new_agents)
 
-    # sort by heuristic here
-    for neighbour in neighbours:
-      if neighbour not in visited:
-        visited.append(neighbour)
-        queue.append(neighbour)
 
 # Driver Code
 def rec_tick(agents, path='', it=0):
@@ -362,7 +370,7 @@ def step(agents):
             print("scenario", scenario)
         dir = scenario[0]
         scenario = scenario[1:]
-        new_agents = next_state(dir, agents)
+        new_agents, _ = next_state(dir, agents)
         agents = deepcopy(new_agents)
         input('continue?\n\n')
 
