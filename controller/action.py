@@ -28,6 +28,8 @@ cl_left.mode = 'COL-REFLECT'
 #! no we can't actually go straight on edges because the sensors fuck. 
 #! we might need to add the top sensor again but I don't remeber why I 
 #! Deleted it in the first place...
+#? well I know why: because if we wanted to detect T, then robot would give 011. but that's
+#? the same as if the robot is just not going so straight on a straight a needs to be re aligned.
 #TODO but back the top sensor so we can 
 sequence = [1, 0, 3, 2, 2, 2, 0, 3 , 2, 2, 2 ,0 ,3, 2, 2, 2 , 0 ,3]
 # sequence = [0,3,3,3,3,3]
