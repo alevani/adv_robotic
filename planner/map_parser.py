@@ -11,6 +11,37 @@ def remove_robot_map(map):
                 map[y][x] = BLOCK.ROAD
     return map
 
+def parse_from_text_file(path):
+    """; Jennifer Silsbury
+########
+#  +  .#
+# ##$$ #
+#    $##
+##$. $.#
+#  .#$##
+## .   #
+########
+    """
+    with open(path, 'r') as f:
+        lines = f.read().split('\n')
+    res = []
+    for l in lines:
+        if len(l) < 1 or l[0] != '#':
+                continue
+        l = l.replace('#', str(BLOCK.WALL))
+        l = l.replace(' ', str(BLOCK.ROAD))
+        l = l.replace('@', str(BLOCK.ROBOT))
+        l = l.replace('+', str(BLOCK.ROBOT))
+        l = l.replace('.', str(BLOCK.GOAL))
+        l = l.replace('$', str(BLOCK.DIAM))
+        l = l.replace('*', str(BLOCK.DIAM_ON_GOAL))
+        l = [ int(x) for x in l]
+        res.append(l)
+        print(res)
+    return res
+
+
+
 def add_agent_to_map(agents, static_map):
     full_map = deepcopy(static_map)
     # check if robot not above diamon
@@ -50,11 +81,14 @@ def parse_map(imap):
                 map[y][x] = BLOCK.ROAD
 
             elif map[y][x] == BLOCK.DIAM_ON_GOAL:
-                agents['diam_on_goals'].append((y, x, BLOCK.DIAM_ON_GOAL))
+                # agents['diam_on_goals'].append((y, x, BLOCK.DIAM_ON_GOAL))
+                goals.append((y, x))
+                agents['diams'].append((y, x, BLOCK.DIAM))
                 map[y][x] = BLOCK.GOAL
 
             elif map[y][x] == BLOCK.GOAL:
                 goals.append((y,x))
+                map[y][x] = BLOCK.GOAL
 
     return map, agents, goals
 
