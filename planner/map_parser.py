@@ -13,22 +13,24 @@ def remove_robot_map(map):
 
 def parse_from_text_file(path):
     """; Jennifer Silsbury
-########
-#  +  .#
-# ##$$ #
-#    $##
-##$. $.#
-#  .#$##
-## .   #
-########
+    ########
+    #  +  .#
+    # ##$$ #
+    #    $##
+    ##$. $.#
+    #  .#$##
+    ## .   #
+    ########
     """
     with open(path, 'r') as f:
         lines = f.read().split('\n')
     res = []
     for l in lines:
-        if len(l) < 1 or l[0] != '#':
-                continue
+        print(l)
+        if len(l) < 1 or not l[0] in 'X#' :
+            continue
         l = l.replace('#', str(BLOCK.WALL))
+        l = l.replace('X', str(BLOCK.WALL))
         l = l.replace(' ', str(BLOCK.ROAD))
         l = l.replace('@', str(BLOCK.ROBOT))
         l = l.replace('+', str(BLOCK.ROBOT))

@@ -13,7 +13,7 @@ SOLUTIONS = []
 AGENTS = {}
 GOALS = []
 DIRS = ['N', 'W', 'S', 'E']
-MAP = MAPS.init
+MAP = MAPS.claire
 SHORTEST_PATH_TO_STATE = defaultdict(list)
 DEBUG=True
 
@@ -189,6 +189,9 @@ def heuristic2(agents, goals=GOALS):
     total_robot = 0
     debug(targets)
     for ind, (y,x,t) in enumerate(diams_pos):
+        print("diams_pos", diams_pos)
+        print("targets", targets)
+
         total += calc_manhattan((y,x), targets[ind])
         if (y,x) in targets:
             targets_left -= 1
@@ -218,11 +221,14 @@ def bfs( agents):
         if map_parser.remove_robot_map(cur_map) == FINAL_MAP:
             SOLUTIONS.append(agents)
             debug(SOLUTIONS)
-            input("enter to continue")
+            debug(SHORTEST_PATH_TO_STATE[hash_agent(agents)])
+            return 
+            # input("enter to continue")
         elif diam_on_corner(cur_map):
             continue
         elif diam_on_empty_edge(cur_map):
             continue
+        # if nb diam on edge > nb goal
         else:
             neighbours = []
             for d in DIRS:
@@ -241,7 +247,9 @@ def bfs( agents):
     for agents in SOLUTIONS:
         debug("---")
         paths = SHORTEST_PATH_TO_STATE[hash_agent(agents)]
-        debug(sorted(paths, key=lambda x: len(x)))
+        sols =  sorted(paths, key=lambda x: len(x))
+        sols.reverse()
+        debug(sols)
 
 
 
@@ -381,6 +389,10 @@ def step(agents):
 if __name__ == '__main__':
     from pprint import pprint
     import sys
+    MAP = map_parser.parse_from_text_file('./compet.txt')
+    # MAP = MAPS.init
+    print(MAP)
+    print_map.render_map(MAP)
     FINAL_MAP   =  map_parser.create_final(MAP)
     STATIC_MAP, AGENTS, GOALS = map_parser.parse_map(MAP)
     cur_map = deepcopy(MAP)
