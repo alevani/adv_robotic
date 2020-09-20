@@ -13,13 +13,10 @@ cl_right = ColorSensor('in4')
 cl_top.mode = 'COL-REFLECT'
 cl_right.mode = 'COL-REFLECT'
 cl_left.mode = 'COL-REFLECT'
-
-sequence = [1, 0, 3, 2, 2, 2, 0, 3, 2, 2, 2, 0, 3, 2, 2, 2, 0, 3]
-sequence = [1 ,1 ,1 , 4, 1, 2, 0, 3, 2, 0, 3, 1] #solution prof
-sequence = [4]
-
+sequence = [1, 1, 1, 4, 1, 2, 0, 3, 2, 0, 3, 1]  # solution prof
 
 FULL_SPEED = 300
+
 
 def calculate_cm_rpm(x):
     # 175 being the tire circonference in mm
@@ -54,7 +51,7 @@ def get_sensor_values(use_top=True):
     right = 0 if cl_right.value() > 50 else 1
     #top = 0 if cl_top.value() > 50 else 1
     top = 0 if cl_top.value() >= 1 else 1
-    
+
     if use_top:
         return str(left) + str(top) + str(right)
     else:
@@ -93,67 +90,18 @@ for to in sequence:
     speedl = FULL_SPEED
     speedr = FULL_SPEED
     value = get_sensor_values()
-    if to == 4:
+
+    if to == 0:  # Forward
+        forward = True
+    elif to == 1:  #  Right turn
+        speedr = 0
+    elif to == 2:  # Left turn
+        speedl = 0
+    elif to == 3:  # Turn around (180)
         # Run backward a little so it does not move the cane when rotating
-        
-        while value != '010':
-            run(speedl, 0, forward)
-            value = get_sensor_values()
-        
-        while True:
-            speedl = 300
-            speedr = 300
-            value = get_sensor_values()
-            print(value)
-            if value == '110': # adjust
-                speedl = 0
-            elif value == '000' or value == '100' or value == '001':
-                break
-            elif value == '011': # adjust
-                speedr = 0
-            run(speedl, speedr, forward)
         mB.run_timed(time_sp=600, speed_sp=-FULL_SPEED)
         mA.run_timed(time_sp=600, speed_sp=-FULL_SPEED)
-        sleep(2)
-        while value != '010':
-            run(speedl, -speedr)
-            value = get_sensor_values()
-    else:
-        if to == 0:  # Forward
-            forward = True
-        elif to == 1:  #  Right turn
-            speedr = 0
-        elif to == 2:  # Left turn
-            speedl = 0
-        elif to == 3:  # Turn around (180)
-            # Run backward a little so it does not move the cane when rotating
-            mB.run_timed(time_sp=600, speed_sp=-FULL_SPEED)
-            mA.run_timed(time_sp=600, speed_sp=-FULL_SPEED)
-            sleep(0.7)
-            rotate_degree_rpm(20)
-            speedr = -FULL_SPEED
-        perform_action(speedl, speedr, value, forward)
-    
-
-
-
-#! Maybe here we will need to implement:
-#! if the robot does not go straight, we have to get it back to a straight
-#! That is, do the basic line following robot -> yes, this is causing trouble. (a lot)
-# ? this might be solved by 44 to 50.
-# ? now logical chicane don't need to be given in the sequence as
-# ? the robot will have no other choice anyway.
-# TODO problem with the robot not pushing the cane in the center of the axis
-#! try: but the top sensor aligned to the two others
-#! it could work now that we don't use it to detect intesect anymore
-# ? solved by putting the sensor higher, it actually works well but very scary.
-#! no we can't actually go straight on edges because the sensors fuck.
-#! we might need to add the top sensor again but I don't remeber why I
-#! Deleted it in the first place...
-# ? well I know why: because if we wanted to detect T, then robot would give 011. but that's
-# ? the same as if the robot is just not going so straight on a straight a needs to be re aligned.
-# todo solution: au lieu de le faire aller tout droit et qu'il parte en couille, on dit au plannar
-# todo d'aller a droite ;;) comme théo a expliqué
-#! on a eu un problème: on vient de s'apervecvoir qu'on avait des problème avec les coins
-#! aussi expliquer qu'on a du se separer des doublons dans le planner et des corner
-#! et changer les edges
+        sleep(0.7)
+        rotate_degree_rpm(20)
+        speedr = -FULL_SPEED
+    perform_action(speedl, speedr, value, forward)
