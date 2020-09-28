@@ -63,7 +63,7 @@ scan_data = [0]*360
 def testCameraLive():
 
     camera.resolution = (640, 480)
-    camera.framerate = 64
+    camera.framerate = 24
 
     rawCapture = pia(camera, size=(640, 480))
 
@@ -86,11 +86,31 @@ def testCameraLive():
     dilatation = cv2.erode(erosion,kernel,iterations = 1)
     cv2.imshow("",dilatation)
     '''
+
+    dark_red_down = np.array([0, 50, 50])
+    light_red_down = np.array([10, 255, 255])
+
+    dark_red_up = np.array([170, 50, 50])
+    light_red_up = np.array([180, 255, 255])
+
     for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
         image = frame.array
-        #gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        #_, thresh = cv2.threshold(gray_img, 50, 250, cv2.THRESH_BINARY_INV)
-        cv2.imshow('frame', image)
+
+        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+        mask_down = cv2.inRange(hsv_image, dark_red_down, light_red_down)
+        mask_up = cv2.inRange(hsv_image, dark_red_up, light_red_up)
+
+        mask = mask_up + mask_down
+
+        result = cv2.bitwise_and(image, image, mask=mask)
+
+        kernel = np.ones((10, 10), np.uint8)
+        result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel)
+
+        # do closing and opnening
+
+        cv2.imshow('result', result)
         rawCapture.truncate(0)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
