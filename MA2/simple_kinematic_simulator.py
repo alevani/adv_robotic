@@ -1,5 +1,5 @@
 import shapely
-from shapely.geometry import LinearRing, LineString, Point
+from shapely.geometry import LinearRing, LineString, Point, Polygon
 from numpy import sin, cos, pi, sqrt
 from random import random
 
@@ -14,7 +14,7 @@ W = 1.18  # width of arena
 H = 1.94  # height of arena
 
 robot_timestep = 0.1        # 1/robot_timestep equals update frequency of robot
-# timestep in kinematics sim (probably don't touch..)
+# timestep in kinematics< sim (probably don't touch..)
 simulation_timestep = 0.01
 
 # the world is a rectangular arena with width W and height H
@@ -22,6 +22,16 @@ world = LinearRing([(W/2, H/2), (-W/2, H/2), (-W/2, -H/2), (W/2, -H/2)])
 
 # Variables
 ###########
+x_blue = 0
+y_blue = 0
+#! Changer pour avoir un carré
+blue_pole = Polygon([(x_blue, y_blue), (x_blue, y_blue + 0.01),
+                     (x_blue + 0.01, y_blue + 0.01), (x_blue + 0.01, y_blue)])
+x_red = 0
+y_red = 0
+red_pole = Polygon([(x_red, y_red), (x_red, y_red + 0.01),
+                    (x_red + 0.01, y_red + 0.01), (x_red + 0.01, y_red)])
+
 
 #! place it in the middle so half width half height
 x = 0.0   # robot position in meters - x direction - positive to the right
@@ -59,16 +69,26 @@ for cnt in range(5000):
     # simple single-ray sensor
     # a line from robot to a point outside arena in direction of q
     ray = LineString([(x, y + 0.0778), (x+cos(q)*2*W, (y+sin(q)*2*H))])
-    ray1 = LineString(
-        [(x - 0.05, y + 0.06), (x+cos(q + 40)*2*W, (y+sin(q + 40)*2*H))])
-    ray2 = LineString(
-        [(x - 0.025, y + 0.075), (x+cos(q + 18.5)*2*W, (y+sin(q + 18.5)*2*H))])
-    ray3 = LineString(
-        [(x + 0.05, y + 0.06), (x+cos(q)*2*W, (y+sin(q - 40)*2*H))])
-    ray4 = LineString(
-        [(x + 0.025, y + 0.025), (x+cos(q)*2*W, (y+sin(q - 18.5)*2*H))])
-    ray5 = LineString([(x - 3, y - 3), (x+cos(q)*2*W, (y+sin(q)*2*H))])
-    ray6 = LineString([(x + 3, y - 3), (x+cos(q)*2*W, (y+sin(q)*2*H))])
+    # ray1 = LineString(
+    #     [(x - 0.05, y + 0.06), (x+cos(q + 40)*2*W, (y+sin(q + 40)*2*H))])
+    # ray2 = LineString(
+    #     [(x - 0.025, y + 0.075), (x+cos(q + 18.5)*2*W, (y+sin(q + 18.5)*2*H))])
+    # ray3 = LineString(
+    #     [(x + 0.05, y + 0.06), (x+cos(q)*2*W, (y+sin(q - 40)*2*H))])
+    # ray4 = LineString(
+    #     [(x + 0.025, y + 0.025), (x+cos(q)*2*W, (y+sin(q - 18.5)*2*H))])
+    # ray5 = LineString([(x - 3, y - 3), (x+cos(q)*2*W, (y+sin(q)*2*H))])
+    # ray6 = LineString([(x + 3, y - 3), (x+cos(q)*2*W, (y+sin(q)*2*H))])
+
+    #! Need to be a plan, and check if plan intesect with blue or/and red
+    camera = Polygon([(.., ..), (x, y + 0.0778), (.., ..)])
+
+    if camera.intesect(blue_pole) and camera.intesect(red_pole):
+        pass
+    elif camera.intesect(blue_pole):
+        pass
+    elif camera.intesect(red_pole):
+        pass
 
     s = world.intersection(ray)
     # distance to wall

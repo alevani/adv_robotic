@@ -108,8 +108,6 @@ def testCameraLive():
         kernel = np.ones((10, 10), np.uint8)
         result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel)
 
-        # do closing and opnening
-
         cv2.imshow('result', result)
         rawCapture.truncate(0)
         if cv2.waitKey(1) & 0xFF == ord('q'):
