@@ -60,10 +60,53 @@ scan_data = [0]*360
 # --------------------- init script end -------------------------
 
 
+''' BLOB DETECTOR '''
+# Setup SimpleBlobDetector parameters.
+params = cv2.SimpleBlobDetector_Params()
+
+# Change thresholds
+params.minThreshold = 10
+params.maxThreshold = 200
+
+# Filter by Area.
+params.filterByArea = True
+params.minArea = 1500
+
+# Filter by Circularity
+params.filterByCircularity = False
+params.minCircularity = 0.1
+
+# Filter by Convexity
+params.filterByConvexity = False
+params.minConvexity = 0.87
+
+# Filter by Inertia
+params.filterByInertia = False
+params.minInertiaRatio = 0.01
+
+# Create a detector with the parameters
+ver = (cv2.__version__).split('.')
+if int(ver[0]) < 3:
+    detector = cv2.SimpleBlobDetector(params)
+else:
+    detector = cv2.SimpleBlobDetector_create(params)
+
+
+def max_contour(contours):
+    max_area = 0
+    max_contour = None
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if area > max_area:
+            max_area = area
+            max_contour = contour
+    return max_contour
+
+
 def testCameraLive():
 
     camera.resolution = (640, 480)
-    camera.framerate = 24
+    camera.framerate = 32
 
     rawCapture = pia(camera, size=(640, 480))
 
@@ -71,15 +114,15 @@ def testCameraLive():
     '''
      # Convert the image to grey scale
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    
+
     # Create a binary image with the defined tresholding
     _, thresh = cv2.threshold(gray_img,230,250,cv2.THRESH_BINARY_INV)
-    
+
     kernel = np.ones((2,2),np.uint8)
 
     # Dilate white pixels, so erode the black one
     erosion = cv2.dilate(thresh,kernel,iterations = 1)
-    
+
     kernel = np.ones((3,3),np.uint8)
 
     # Erode the white pixels so dilate the black one
@@ -105,15 +148,44 @@ def testCameraLive():
 
         result = cv2.bitwise_and(image, image, mask=mask)
 
-        kernel = np.ones((10, 10), np.uint8)
-        result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel)
+        gray_img = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+        gray_img = cv2.medianBlur(gray_img, 5)
 
-        cv2.imshow('result', result)
+        cv2.imshow('medianBlur', gray_img)
+
+        rows = gray_img.shape[0]
+        circles = cv2.HoughCircles(
+            gray_img, cv2.HOUGH_GRADIENT, 1, rows/8, param1=100, param2=30, minRadius=0, maxRadius=0)
+
+        if circles is not None:
+            print("I detect red !!!!")
+            # circles = np.uint16(np.around(circles))
+            # for i in circles[0, :]:
+            #     center = (i[0], i[1])
+            #     radius = i[2]
+            #     cv2.circle(result, center, radius, (0, 0, 255), 3)
+        # gray_img = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+        # _, thresh = cv2.threshold(gray_img, 20, 120, cv2.THRESH_BINARY_INV)
+
+        # # kernel = np.ones((10, 10), np.uint8)
+        # # result_op = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel)
+
+        # _, contours, _ = cv2.findContours(
+        #     thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        # try:
+        #     el = cv2.fitEllipse(max_contour(contours))
+        #     cv2.ellipse(result, el, (0, 0, 255), -1)
+        # except:
+        #     print("no el detected")
+        # cv2.imshow('thresh', thresh)
+    #     cv2.imshow('result_op', result)
+
         rawCapture.truncate(0)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+    #     if cv2.waitKey(1) & 0xFF == ord('q'):
+    #         break
 
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
 
 
 def testCamera():
