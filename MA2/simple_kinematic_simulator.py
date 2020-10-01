@@ -83,11 +83,11 @@ for cnt in range(5000):
     #! Need to be a plan, and check if plan intesect with blue or/and red
     camera = Polygon([(.., ..), (x, y + 0.0778), (.., ..)])
 
-    if camera.intesect(blue_pole) and camera.intesect(red_pole):
+    if camera.intesects(blue_pole) and camera.intesects(red_pole):
         pass
-    elif camera.intesect(blue_pole):
+    elif camera.intesects(blue_pole):
         pass
-    elif camera.intesect(red_pole):
+    elif camera.intesects(red_pole):
         pass
 
     s = world.intersection(ray)
