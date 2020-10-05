@@ -22,18 +22,19 @@ world = LinearRing([(W/2, H/2), (-W/2, H/2), (-W/2, -H/2), (W/2, -H/2)])
 
 # Variables
 ###########
-x_blue = 0
-y_blue = 0
-#! Changer pour avoir un carré
+x_blue = -0.5
+y_blue = 0.5
+
 blue_pole = Polygon([(x_blue, y_blue), (x_blue, y_blue + 0.01),
                      (x_blue + 0.01, y_blue + 0.01), (x_blue + 0.01, y_blue)])
-x_red = 0
-y_red = 0
+x_red = 0.5
+y_red = 0.5
 red_pole = Polygon([(x_red, y_red), (x_red, y_red + 0.01),
                     (x_red + 0.01, y_red + 0.01), (x_red + 0.01, y_red)])
 
 
 #! place it in the middle so half width half height
+#! Might already be the middle?
 x = 0.0   # robot position in meters - x direction - positive to the right
 y = 0.0   # robot position in meters - y direction - positive up
 q = 0.0   # robot heading with respect to x-axis in radians
@@ -65,6 +66,13 @@ def simulationstep():
 #################
 file = open("trajectory.dat", "w")
 
+
+def return_inter(alpha, x, y, world):
+    ray = LineString([(x, y + 0.0778), (x+cos(alpha)*2*W, (y+sin(alpha)*2*H))])
+    s = world.intersection(ray)
+    return sqrt((s.x-x)**2+(s.y-y)**2)
+
+
 for cnt in range(5000):
     # simple single-ray sensor
     # a line from robot to a point outside arena in direction of q
@@ -80,19 +88,25 @@ for cnt in range(5000):
     # ray5 = LineString([(x - 3, y - 3), (x+cos(q)*2*W, (y+sin(q)*2*H))])
     # ray6 = LineString([(x + 3, y - 3), (x+cos(q)*2*W, (y+sin(q)*2*H))])
 
-    #! Need to be a plan, and check if plan intesect with blue or/and red
-    camera = Polygon([(.., ..), (x, y + 0.0778), (.., ..)])
+    points = [(x - 0.0778, y + 2 * 0.0778),
+              (x, y + 0.0778), (x + 0.0778, y + 2*0.0778)]
+    camera = Polygon([(x[0], x[1]) for x in points])
 
-    if camera.intesects(blue_pole) and camera.intesects(red_pole):
-        pass
-    elif camera.intesects(blue_pole):
-        pass
-    elif camera.intesects(red_pole):
-        pass
+    if camera.intersects(blue_pole) and camera.intersects(red_pole):
+        print("in both field of view")
+    elif camera.intersects(blue_pole):
+        print("Intersect with blue")
+    elif camera.intersects(red_pole):
+        print("Intersect with red")
 
     s = world.intersection(ray)
     # distance to wall
     distance = sqrt((s.x-x)**2+(s.y-y)**2)
+
+    # Lidar simulation
+    lidar_values = [return_inter(alpha, x, y, world)
+                    for alpha in range(0, 360)]
+    print(lidar_values)
 
     # simple controller - change direction of wheels every 10 seconds (100*robot_timestep) unless close to wall then turn on spot
     if (distance < 0.5):
