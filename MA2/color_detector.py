@@ -1,6 +1,7 @@
 #! /usr/bin/env python3.7
 
 from cv2 import *
+import numpy as np
 
 def red_mask(hsv_image):
     dark_red_down = np.array([0, 50, 50])
@@ -27,8 +28,8 @@ MASKS = {
     'red': red_mask,
 }
 
-def circle_detector(2col_img) -> bool:
-    gray_img = cv2.cvtColor(2col_img, cv2.COLOR_BGR2GRAY)
+def circle_detector(bicolor_img) -> bool:
+    gray_img = cv2.cvtColor(bicolor_img, cv2.COLOR_BGR2GRAY)
     gray_img = cv2.medianBlur(gray_img, 5)
 
     cv2.imshow('medianBlur', gray_img)
@@ -36,35 +37,46 @@ def circle_detector(2col_img) -> bool:
     rows = gray_img.shape[0]
     circles = cv2.HoughCircles(
         gray_img, cv2.HOUGH_GRADIENT, 1, rows/8, param1=100, param2=30, minRadius=0, maxRadius=0)
+    print(circles)
 
     if circles is not None:
-        return True
-    else: False
+        return True, gray_img
+    else:
+        return False, gray_img
 
-def color_detector(bgr_img):
+def apply_mask(bgr_img, color):
     # imshow('cam', img)
     # waitKey(0)
     # destroyWindow('cam')
-    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    for color, mask_fn in MASKS.items():
-        mask = mask_fn(hsv_image)
-        2colors_img = cv2.bitwise_and(image, image, mask=mask)
-        if circle_detector(2colors_img):
-            print(color + ': detected !')
-        else:
-            print(color + ': nope ')
+    hsv_image = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2HSV)
+    mask_fn = MASKS[color]
+    mask = mask_fn(hsv_image)
+    bicol = cv2.bitwise_and(bgr_img, bgr_img, mask=mask)
+    return bicol
     #if cv2.waitKey(1) & 0xFF == ord('q'):
     #    break
 
-    rawCapture.truncate(0)
+    # rawCapture.truncate(0)
 
 
 if __name__ == '__main__':
+    img = imread('./color_wheel.jpeg')
+    for c in MASKS.keys():
+        bicol = apply_mask(img, c)
+        imshow(c, bicol)
+        waitKey(0)
+        destroyWindow(c)
+        if circle_detector(bicol):
+            print(color + ': detected !')
+        else:
+            print(color + ': nope ')
+    exit(0)
     while True:
-        cam = VideoCapture(0)
-        s, img = cam.read()
+        # cam = VideoCapture(0)
+        # s, img = cam.read()
+        img = imread('./color_wheel.jpeg')
         if s:
-            color_detector(img)
+            apply_mask(img)
         else:
             print('couldnt read img')
 
