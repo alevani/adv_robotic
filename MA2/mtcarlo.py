@@ -9,7 +9,7 @@ H = 1.94  # height of arena
 # the world is a rectangular arena with width W and height H
 world = LinearRing([(W/2, H/2), (-W/2, H/2), (-W/2, -H/2), (W/2, -H/2)])
 
-nb_candidates = 14
+nb_candidates = 5
 
 
 def calculate_distance(a, b):
@@ -19,12 +19,12 @@ def calculate_distance(a, b):
 def return_inter(alpha, x, y):
     global world
 
-    ray = LineString([(x, y + 0.0778), (x+cos(alpha)*2*W, (y+sin(alpha)*2*H))])
-    print("------")
-    print(ray)
-    print(x, y)
+    ray = LineString([(x, y), (x+cos(alpha)*2*W, (y+sin(alpha)*2*H))])
+    # print("------")
+    # print(ray)
+    # print(x, y)
     s = world.intersection(ray)
-    print(s)
+    # print(s)
     return sqrt((s.x-x)**2+(s.y-y)**2)
 
 
@@ -50,10 +50,9 @@ def get_best_candidates(samples):
     # # sort by second index
     candidates.sort(key=lambda candidates: candidates[0])
 
-    return candidates[:floor(len(candidates)/2)]
+    return candidates[:3]
 
 
-# samples = [(uniform(-0.58, .58), uniform(-.96, .96), randint(0, 360))
 # Create 100 samples
 samples = [(uniform(-0.58, .58), uniform(-.96, .96), randint(0, 360))
            for _ in range(0, nb_candidates)]
@@ -61,17 +60,20 @@ samples = [(uniform(-0.58, .58), uniform(-.96, .96), randint(0, 360))
 best_candidates = get_best_candidates(samples)
 
 # Preferably needs to become while not converged
-while True:
+iter = 0
+while iter != 20:
+    iter += 1
     #! [NTA] move the samples accordingly the fuck?
     DISTrr = get_lidar_values()
 
     sigma = std([(b[1][0], b[1][1]) for b in best_candidates])
     re_candidates = []
     for b in best_candidates:
-        m = .5  # ! how??
+        m = 0  # ? 0 because it's the point itself.. ?
         for _ in range(0, 3):
             re_candidates.append(
                 (gauss(m, sigma), gauss(m, sigma), randint(0, 360)))
 
     best_candidates = get_best_candidates(re_candidates)
-    print(best_candidates)
+    print(len(best_candidates))
+    print(best_candidates[0])
