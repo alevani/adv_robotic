@@ -1,8 +1,9 @@
-import shapely
 from shapely.geometry import LinearRing, LineString, Point, Polygon
 from numpy import sin, cos, pi, sqrt, subtract, std, mean
-from random import *
+import matplotlib.pyplot as plt
 from math import floor
+from random import *
+import shapely
 
 H = 1.18  # width of arena
 W = 1.94  # height of arena
@@ -32,19 +33,15 @@ def calculate_distance(a, b):
 # Return world intersection with a ray
 def return_inter(alpha, x, y):
     global world
-
     ray = LineString([(x, y), (x+cos(alpha)*2*W, (y+sin(alpha)*2*H))])
-    # print("------")
-    # print(ray)
-    # print(x, y)
     s = world.intersection(ray)
-    # print(s)
     return sqrt((s.x-x)**2+(s.y-y)**2)
 
 
 # Get the lidar values for simulated samples
 def get_simulated_lidar_values(x):
     # shift of alpha so that both the robot and the simulation look in the same direction
+    # ? - or + shift
     return [return_inter((x[2] + (alpha * 36)) % 360, x[0], x[1]) for alpha in range(0, 10)]
 
 
@@ -75,7 +72,7 @@ samples = [[uniform(-.96, .96), uniform(-0.58, .58), randint(0, 360)]
            for _ in range(0, nb_samples)]
 
 best_candidates = get_best_candidates(samples)
-
+[(plt.scatter(be[1][0], be[1][1], c='b')) for be in best_candidates]
 iter = 0
 while iter != 20:
     iter += 1
@@ -112,4 +109,8 @@ while iter != 20:
             re_candidates.append([x, y, randint(0, 360)])
 
     best_candidates = get_best_candidates(re_candidates)
+
 print(avg_xya(best_candidates))
+[(plt.scatter(be[1][0], be[1][1], c='r')) for be in best_candidates]
+plt.show()
+# TODO use the color sensor afterward
