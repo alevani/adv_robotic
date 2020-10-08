@@ -48,7 +48,14 @@ def get_simulated_lidar_values(x):
 # Return the values thymio lidar sensor
 def get_lidar_values():
     #! Dummy values
-    return [uniform(0.01, 1.94) for x in range(0, 10)]
+    x_start = 0.0
+    y_start = 0.0
+    a_start = 0.0
+    plt.scatter(x_start, y_start, c='g')
+
+    # Set the robot position at 0 to see if it works
+    return get_simulated_lidar_values([x_start, y_start, a_start])
+    # return [uniform(0.01, 1.94) for x in range(0, 10)]
 
 
 # Return the nb_candidates best candidates
@@ -73,22 +80,21 @@ samples = [[uniform(-.96, .96), uniform(-0.58, .58), randint(0, 360)]
 
 best_candidates = get_best_candidates(samples)
 [(plt.scatter(be[1][0], be[1][1], c='b')) for be in best_candidates]
+
 iter = 0
-while iter != 20:
+while iter != 50:
     iter += 1
 
-    # DISTrr = get_lidar_values()
-
-    # Move the robot and the sample accordingly
-    # By design the step function will be moving the robot 1cm ahead, the choice of the angle is not defined yet so dummy value
-    for b in best_candidates:
-        b[1][0] += 0.01  # need to move according to angle ;(
-        b[1][1] += 0.01
-        b[1][2] += get_robot_angle_step()
-
-    # Resample
+    # Move and Resample
     re_candidates = []
     for b in best_candidates:
+        # b[1][0] += 0.01  # need to move according to angle ;(
+        # b[1][1] += 0.01
+        # b[1][2] += get_robot_angle_step()
+        b[1][0] += 0.0  # need to move according to angle ;(
+        b[1][1] += 0.0
+        b[1][2] += 0
+
         # Creates nb_candidates new subsample for each best candidate
         for _ in range(0, nb_candidates):
             # Resample around a 1 centimer wide box.
@@ -109,8 +115,11 @@ while iter != 20:
             re_candidates.append([x, y, randint(0, 360)])
 
     best_candidates = get_best_candidates(re_candidates)
+    # [(plt.scatter(be[1][0], be[1][1], c='r')) for be in best_candidates]
 
-print(avg_xya(best_candidates))
+
+# print(avg_xya(best_candidates))
 [(plt.scatter(be[1][0], be[1][1], c='r')) for be in best_candidates]
 plt.show()
+
 # TODO use the color sensor afterward
