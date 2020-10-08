@@ -19,8 +19,8 @@ def red_mask(hsv_image):
 
 
 def blue_mask(hsv_image):
-    dark_blue = np.array([100, 50, 50])
-    light_blue = np.array([140, 255, 255])
+    dark_blue = np.array([90, 100, 100])
+    light_blue = np.array([150, 255, 255])
     mask = cv2.inRange(hsv_image, dark_blue, light_blue)
     return mask
 
@@ -46,13 +46,8 @@ MASKS = {
 }
 
 
-def circle_detector(bicolor_img) -> bool:
-    bi = bicolor_img.copy()
-    gray_img = cv2.cvtColor(bi, cv2.COLOR_BGR2GRAY)
-    gray_img = cv2.medianBlur(gray_img, 5)
-    debug_img(gray_img)
-    ret,gray_img = cv2.threshold(gray_img,60,255,cv2.THRESH_BINARY)
-    debug_img(gray_img, 'before')
+def find_circle_w_hough(img) -> list:
+    gray_img = img.copy()
     rows = gray_img.shape[0]
     circles = cv2.HoughCircles(
         gray_img,
@@ -63,7 +58,43 @@ def circle_detector(bicolor_img) -> bool:
         # param2=30,
         minRadius=0,
         maxRadius=0)
-    print(circles)
+    return circles
+
+
+def find_circle_w_fitellipse(img) -> list:
+    thres_val = 60
+    gray_img = img.copy()
+    ret, im2 = cv2.threshold(gray_img, thres_val, 255, cv2.THRESH_BINARY_INV)
+    conts, hierarchy = cv2.findContours(gray_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    largest = None
+    max_area = 0
+    for i,c in enumerate(conts):
+        blob = cv2.polylines(img.copy(),[c], True, (0,255,0), 1)
+        # debug_img(blob, 'a'+str(i) )
+        area = cv2.contourArea(c)
+        if area > max_area:
+            largest = c
+            max_area = area
+        print(area)
+    if max_area != 0:
+        blob = cv2.polylines(img.copy(),[largest], True, (0,255,0), 1)
+        debug_img(blob, 'largest' )
+
+        #6
+        PUP_CENTER = get_center(largest)
+        el = cv2.fitEllipse(largest)
+
+        blob = cv2.ellipse(img.copy(),el, (120, 255, 0), 5)
+        debug_img(blob, 'largest' )
+
+
+def circle_detector(bicolor_img) -> bool:
+    bi = bicolor_img.copy()
+    gray_img = cv2.cvtColor(bi, cv2.COLOR_BGR2GRAY)
+    gray_img = cv2.medianBlur(gray_img, 5)
+    ret,gray_img = cv2.threshold(gray_img,60,255,cv2.THRESH_BINARY)
+    find_circle_w_fitellipse(gray_img)
+    circles = find_circle_w_hough(gray_img)
 
     if circles is not None:
         # convert the (x, y) coordinates and radius of the circles to integers
