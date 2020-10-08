@@ -20,7 +20,7 @@ def red_mask(hsv_image):
 
 def blue_mask(hsv_image):
     dark_blue = np.array([90, 100, 100])
-    light_blue = np.array([150, 255, 255])
+    light_blue = np.array([140, 255, 255])
     mask = cv2.inRange(hsv_image, dark_blue, light_blue)
     return mask
 
@@ -33,7 +33,7 @@ def yellow_mask(hsv_image):
 
 
 def green_mask(hsv_image):
-    dark = np.array([65, 100, 100])
+    dark = np.array([53, 100, 100])
     light = np.array([75, 255, 255])
     mask = cv2.inRange(hsv_image, dark, light)
     return mask
@@ -46,7 +46,13 @@ MASKS = {
 }
 
 
-def find_circle_w_hough(img) -> list:
+# not used, but process could be usefull
+def find_circle_w_hough(bicolor_img) -> list:
+    thres_val = 60
+    bi = bicolor_img.copy()
+    gray_img = cv2.cvtColor(bi, cv2.COLOR_BGR2GRAY)
+    gray_img = cv2.medianBlur(gray_img, 5)
+    ret, im2 = cv2.threshold(gray_img, thres_val, 255, cv2.THRESH_BINARY_INV)
     gray_img = img.copy()
     rows = gray_img.shape[0]
     circles = cv2.HoughCircles(
@@ -61,72 +67,43 @@ def find_circle_w_hough(img) -> list:
     return circles
 
 
-def find_circle_w_fitellipse(img) -> list:
-    thres_val = 60
-    gray_img = img.copy()
+def find_contours(bicolor_img) -> list:
+    bi = bicolor_img.copy()
+    thres_val = 60 # move to config
+    gray_img = cv2.cvtColor(bi, cv2.COLOR_BGR2GRAY)
+    gray_img = cv2.medianBlur(gray_img, 5)
     ret, im2 = cv2.threshold(gray_img, thres_val, 255, cv2.THRESH_BINARY_INV)
     conts, hierarchy = cv2.findContours(gray_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    largest = None
-    max_area = 0
-    for i,c in enumerate(conts):
-        blob = cv2.polylines(img.copy(),[c], True, (0,255,0), 1)
-        # debug_img(blob, 'a'+str(i) )
-        area = cv2.contourArea(c)
-        if area > max_area:
-            largest = c
-            max_area = area
-        print(area)
-    if max_area != 0:
-        blob = cv2.polylines(img.copy(),[largest], True, (0,255,0), 1)
-        debug_img(blob, 'largest' )
-
-        #6
-        PUP_CENTER = get_center(largest)
-        el = cv2.fitEllipse(largest)
-
-        blob = cv2.ellipse(img.copy(),el, (120, 255, 0), 5)
-        debug_img(blob, 'largest' )
+    return conts
 
 
 def circle_detector(bicolor_img) -> bool:
-    bi = bicolor_img.copy()
-    gray_img = cv2.cvtColor(bi, cv2.COLOR_BGR2GRAY)
-    gray_img = cv2.medianBlur(gray_img, 5)
-    ret,gray_img = cv2.threshold(gray_img,60,255,cv2.THRESH_BINARY)
-    find_circle_w_fitellipse(gray_img)
-    circles = find_circle_w_hough(gray_img)
+    min_area = 400
+    contours = find_contours(bicolor_img)
+    conts_w_area = [ (c, cv2.contourArea(c)) for c in contours ]
+    conts_w_area = [ x for x in conts_w_area if x[1] > min_area]
+    if len(conts_w_area) > 0:
+        sorted_conts = sorted(conts_w_area, key=lambda x: x[1]) # sort by area size
+        sorted_conts = list(reversed(sorted_conts)) # decreasing order
+        largest = sorted_conts[0][0]
+        el = cv2.fitEllipse(largest)
+        # if DEBUG:
+        #     print(largest)
+        #     blob = cv2.ellipse(bicolor_img.copy(),el, (120, 255, 0), 5)
+        #     show(blob, 'largest' )
+        # circle_center = get_center(largest)
+        return True, el
 
-    if circles is not None:
-        # convert the (x, y) coordinates and radius of the circles to integers
-        circles = np.round(circles[0, :]).astype("int")
-        # loop over the (x, y) coordinates and radius of the circles
-        for (x, y, r) in circles:
-            # draw the circle in the output image, then draw a rectangle
-            # corresponding to the center of the circle
-            output = gray_img.copy()
-            image = gray_img.copy()
-            cv2.circle(output, (x, y), r, (255, 255, 255), 4)
-            cv2.rectangle(output, (x - 5, y - 5), (x + 5, y + 5), (0, 0, 255), -1)
-        # show the output image
-            cv2.imshow("output", np.hstack([image, output]))
-            cv2.waitKey(0)
-            cv2.destroyWindow("output")
 
-        return True, gray_img
     else:
-        return False, gray_img
+        return False, None
 
 
 def apply_mask(bgr_img, mask_fn):
     hsv_image = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2HSV)
     mask = mask_fn(hsv_image)
     bicol = cv2.bitwise_and(bgr_img, bgr_img, mask=mask)
-
     return bicol
-    #if cv2.waitKey(1) & 0xFF == ord('q'):
-    #    break
-
-    # rawCapture.truncate(0)
 
 
 if __name__ == '__main__':
