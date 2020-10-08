@@ -2,6 +2,8 @@
 
 from cv2 import *
 import numpy as np
+from utils import *
+
 
 def red_mask(hsv_image):
     dark_red_down = np.array([0, 50, 50])
@@ -15,43 +17,80 @@ def red_mask(hsv_image):
     mask = mask_up + mask_down
     return mask
 
+
 def blue_mask(hsv_image):
     dark_blue = np.array([100, 50, 50])
     light_blue = np.array([140, 255, 255])
-
     mask = cv2.inRange(hsv_image, dark_blue, light_blue)
+    return mask
 
+
+def yellow_mask(hsv_image):
+    dark = np.array([20, 100, 100])
+    light = np.array([30, 255, 255])
+    mask = cv2.inRange(hsv_image, dark, light)
+    return mask
+
+
+def green_mask(hsv_image):
+    dark = np.array([65, 100, 100])
+    light = np.array([75, 255, 255])
+    mask = cv2.inRange(hsv_image, dark, light)
     return mask
 
 MASKS = {
     'blue': blue_mask,
     'red': red_mask,
+    'green': green_mask,
+    'yellow': yellow_mask,
 }
 
+
 def circle_detector(bicolor_img) -> bool:
-    gray_img = cv2.cvtColor(bicolor_img, cv2.COLOR_BGR2GRAY)
+    bi = bicolor_img.copy()
+    gray_img = cv2.cvtColor(bi, cv2.COLOR_BGR2GRAY)
     gray_img = cv2.medianBlur(gray_img, 5)
-
-    cv2.imshow('medianBlur', gray_img)
-
+    debug_img(gray_img)
+    ret,gray_img = cv2.threshold(gray_img,60,255,cv2.THRESH_BINARY)
+    debug_img(gray_img, 'before')
     rows = gray_img.shape[0]
     circles = cv2.HoughCircles(
-        gray_img, cv2.HOUGH_GRADIENT, 1, rows/8, param1=100, param2=30, minRadius=0, maxRadius=0)
+        gray_img,
+        cv2.HOUGH_GRADIENT,
+        1,
+        rows/8,
+        param1=50,
+        param2=30,
+        minRadius=0,
+        maxRadius=0)
     print(circles)
 
     if circles is not None:
+        # convert the (x, y) coordinates and radius of the circles to integers
+        circles = np.round(circles[0, :]).astype("int")
+        # loop over the (x, y) coordinates and radius of the circles
+        for (x, y, r) in circles:
+            # draw the circle in the output image, then draw a rectangle
+            # corresponding to the center of the circle
+            output = gray_img.copy()
+            image = gray_img.copy()
+            cv2.circle(output, (x, y), r, (255, 255, 255), 4)
+            cv2.rectangle(output, (x - 5, y - 5), (x + 5, y + 5), (0, 0, 255), -1)
+        # show the output image
+            cv2.imshow("output", np.hstack([image, output]))
+            cv2.waitKey(0)
+            cv2.destroyWindow("output")
+
         return True, gray_img
     else:
         return False, gray_img
 
-def apply_mask(bgr_img, color):
-    # imshow('cam', img)
-    # waitKey(0)
-    # destroyWindow('cam')
+
+def apply_mask(bgr_img, mask_fn):
     hsv_image = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2HSV)
-    mask_fn = MASKS[color]
     mask = mask_fn(hsv_image)
     bicol = cv2.bitwise_and(bgr_img, bgr_img, mask=mask)
+
     return bicol
     #if cv2.waitKey(1) & 0xFF == ord('q'):
     #    break
@@ -61,24 +100,9 @@ def apply_mask(bgr_img, color):
 
 if __name__ == '__main__':
     img = imread('./color_wheel.jpeg')
-    for c in MASKS.keys():
-        bicol = apply_mask(img, c)
-        imshow(c, bicol)
-        waitKey(0)
-        destroyWindow(c)
+    for c, mask_fn in MASKS.items():
+        bicol = apply_mask(img, mask_fn)
         if circle_detector(bicol):
             print(color + ': detected !')
         else:
             print(color + ': nope ')
-    exit(0)
-    while True:
-        # cam = VideoCapture(0)
-        # s, img = cam.read()
-        img = imread('./color_wheel.jpeg')
-        if s:
-            apply_mask(img)
-        else:
-            print('couldnt read img')
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
