@@ -58,9 +58,9 @@ def circle_detector(bicolor_img) -> bool:
         gray_img,
         cv2.HOUGH_GRADIENT,
         1,
-        rows/8,
-        param1=50,
-        param2=30,
+        rows/6,
+        # param1=50,
+        # param2=30,
         minRadius=0,
         maxRadius=0)
     print(circles)
@@ -99,8 +99,8 @@ def apply_mask(bgr_img, mask_fn):
 
 
 if __name__ == '__main__':
-    img = imread('./color_wheel.jpeg')
-    for c, mask_fn in MASKS.items():
+    img = imread('./img/color_wheel.jpg')
+    for color, mask_fn in MASKS.items():
         bicol = apply_mask(img, mask_fn)
         if circle_detector(bicol):
             print(color + ': detected !')
