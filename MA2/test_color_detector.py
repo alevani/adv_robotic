@@ -3,25 +3,36 @@ import pytest
 
 
 def test_wheel():
+    img = imread('./img/color_wheel.jpg')
+    output = img.copy()
     for c in MASKS.keys():
         print(" === " + c)
-        img = imread('./img/color_wheel.jpg')
         bicol = apply_mask(img, MASKS[c])
-        imshow(c, bicol)
-        waitKey(0)
-        destroyWindow(c)
+        output = np.hstack(( bicol,output))
+    show(output)
 
 
 def test_4color_image():
+    output = []
     for c in MASKS.keys():
-        print(" === " + c)
+        # print(" === " + c)
         img = imread('./img/{}.jpg'.format(c))
         bicol = apply_mask(img, MASKS[c])
-        show( bicol,c)
+        # show( bicol,c)
         detected, el = circle_detector(bicol)
-        print("circle detected: ", detected)
+        # print("circle detected: ", detected)
         blob = cv2.ellipse(img.copy(),el, (120, 255, 0), 5)
-        show(blob, detected)
+        # show(blob, detected)
+        row = np.hstack((bicol, blob))
+        show(row)
+        # if len(output) == 0:
+        #     output= bicol.copy()
+        #     output = np.hstack((output, blob))
+            # output = np.concatenate((output, row), axis=0)
+        # else:
+            # output = np.hstack((output, bicol))
+            # output = np.hstack((output, blob))
+    # show(output)
 
 
 def test_video():
@@ -49,8 +60,9 @@ def test_video():
             bicol[c] = apply_mask(frame, mask_fn)
             detected, el = circle_detector(bicol[c])
             if detected:
-                current_col += c + ' '
+                current_col += c 
                 cv2.ellipse(output,el, rgb_color[c], 5)
+            current_col += '\t'
 
         for c, img in bicol.items():
             output = np.hstack((output, img))
@@ -67,9 +79,6 @@ def test_video():
             key = cv2.waitKey(0)
             if key == ord('q'):
                 break
-            if key == ord('n'):
-                # cv2.waitKey(0) #wait until any key is pressed
-                pass
             if key == ord('p'):
                 # cv2.waitKey(-1) #wait until any key is pressed
                 paused = False
@@ -84,5 +93,4 @@ def test_video():
     cv2.destroyAllWindows()  
 
 if __name__ == '__main__':
-    DEBUG = False
     test_video()
