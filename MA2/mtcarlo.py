@@ -81,6 +81,7 @@ class ParticleFiltering:
         while iter != 10:
             iter += 1
 
+            #! wait for step()?
             # Move and Resample
             re_candidates = []
             for b in self.best_candidates:

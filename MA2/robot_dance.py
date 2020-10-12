@@ -6,6 +6,7 @@ from time import sleep
 import threading
 from random import randint
 import os
+from mtcarlo import *
 
 # initialize asebamedulla in background and wait 0.3s to let
 # asebamedulla startup
@@ -89,7 +90,6 @@ class Thymio:
         self.aseba.SendEventName("motor.target", [left_wheel, right_wheel])
 
     def wander(self):
-
         pass
 
     def dance(self):
@@ -100,6 +100,8 @@ class Thymio:
 if __name__ == '__main__':
     rest = False
     try:
+        l = ParticleFiltering()
+        pos = l.get_x_y_alpha()
         robot = Thymio()
         while not rest:
             if robot.getConfidence() > 10:
