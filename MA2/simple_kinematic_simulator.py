@@ -1,7 +1,7 @@
 import shapely
 from shapely.geometry import LinearRing, LineString, Point, Polygon
 from numpy import sin, cos, pi, sqrt
-from random import random
+from random import *
 
 # A prototype simulation of a differential-drive robot with one sensor
 
@@ -73,6 +73,10 @@ def return_inter(alpha, x, y, world):
     return sqrt((s.x-x)**2+(s.y-y)**2)
 
 
+samples = [(uniform(-0.58, .58), uniform(-.96, .96), randint(0, 360))
+           for _ in range(0, 100)]
+for s in samples:
+    file.write(str(s[0])+", " + str(s[1]) + "\n")
 for cnt in range(5000):
     # simple single-ray sensor
     # a line from robot to a point outside arena in direction of q
@@ -104,9 +108,9 @@ for cnt in range(5000):
     distance = sqrt((s.x-x)**2+(s.y-y)**2)
 
     # Lidar simulation
-    lidar_values = [return_inter(alpha, x, y, world)
-                    for alpha in range(0, 360)]
-    print(lidar_values)
+    # lidar_values = [return_inter(alpha, x, y, world)
+    #                 for alpha in range(0, 360)]
+    #   print(lidar_values)
 
     # simple controller - change direction of wheels every 10 seconds (100*robot_timestep) unless close to wall then turn on spot
     if (distance < 0.5):

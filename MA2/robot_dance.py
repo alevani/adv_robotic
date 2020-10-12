@@ -3,6 +3,7 @@ import dbus.mainloop.glib
 import dbus
 from threading import Thread
 from time import sleep
+import threading
 from random import randint
 import os
 
@@ -19,15 +20,23 @@ class Thymio:
         print("Setting up")
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         bus = dbus.SessionBus()
-        asebaNetworkObject = bus.get_object("ch.epfl.mobots.Aseba", "/")
+        self.asebaNetworkObject = bus.get_object("ch.epfl.mobots.Aseba", "/")
 
-        asebaNetwork = dbus.Interface(
+        self.asebaNetwork = dbus.Interface(
             asebaNetworkObject, dbus_interface="ch.epfl.mobots.AsebaNetwork"
         )
         # load the file which is run on the thymio
-        asebaNetwork.LoadScripts(
+        self.asebaNetwork.LoadScripts(
             "thympi.aesl", reply_handler=self.dbusError, error_handler=self.dbusError
         )
+
+        # give th robot a gender, a change its color accordingly
+        self.gender = self.selectGender()
+        self.aseba.SendEventName(
+            "led.top", (255, 0, 0) if gender else (0, 0, 255))
+
+        self.confidence = 0
+        self.confidence()
 
         # scanning_thread = Process(target=robot.drive, args=(200,200,))
         return asebaNetwork
@@ -40,22 +49,61 @@ class Thymio:
         # Currently only the error is logged. Maybe interrupt the mainloop here
         print("dbus error: %s" % str(e))
 
-# Randomly choose a color and attribute it to the thymio
+    def selectGender(self):
+        return 0 if randint(0, 1) else 1
 
+    # Periodically increase confidence
+    def confidence(self):
+        self.confidence += 1
+        threading.Timer(2, confidence).start()
 
-def benchwarmer():
-    color = 0 if randint(0, 1) else 1
-    return color
+    def getConfidence(self):
+        return self.confidence
+
+    def resetConfidence(self):
+        self.confidence = 0
+
+    def startCommunication(self):
+        # this enables the prox.com communication channels
+        self.asebaNetwork.SendEventName("prox.comm.enable", [1])
+        # This enables the prox.comm rx value to zero, gets overwritten when receiving a value
+        self.asebaNetwork.SendEventName("prox.comm.rx", [0])
+
+    # Remeber to change tx number when finding a partner
+    def sendInformation(self, number):
+        self.asebaNetwork.SendEventName("prox.comm.tx", [number])
+
+    # Remeber to change rx number after confirming a partner. This can be done the same way as the tx :)
+    def receiveInformation(self):
+        self.rx = asebaNetwork.GetVariable("thymio-II", "prox.comm.rx")
+        print(rx[0])
+
+    def wander(self):
+
+        pass
+
+    def dance(self):
+        self.aseba.SendEventName(
+            "led.top", (255, 0, 255))
 
 
 if __name__ == '__main__':
+    rest = False
     try:
         robot = Thymio()
+        while not rest:
+            if robot.getConfidence() > 10:
+                robot.resetConfidence()
+                robot.wander()
+                robot.dance()
+                robot.rest()
+                rest = True
 
         # Put the sens method in a thread and run it
         # thread = Thread(target=robot.sens)
         # thread.daemon = True
         # thread.start()
+
     except KeyboardInterrupt:
         print("Stopping robot")
         exit_now = True

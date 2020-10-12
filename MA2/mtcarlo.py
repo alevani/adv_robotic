@@ -79,10 +79,10 @@ samples = [[uniform(-.96, .96), uniform(-0.58, .58), randint(0, 360)]
            for _ in range(0, nb_samples)]
 
 best_candidates = get_best_candidates(samples)
-[(plt.scatter(be[1][0], be[1][1], c='b')) for be in best_candidates]
+# [(plt.scatter(be[1][0], be[1][1], c='b')) for be in best_candidates]
 
 iter = 0
-while iter != 50:
+while iter != 10:
     iter += 1
 
     # Move and Resample
@@ -119,7 +119,7 @@ while iter != 50:
 
 
 # print(avg_xya(best_candidates))
-[(plt.scatter(be[1][0], be[1][1], c='r')) for be in best_candidates]
-plt.show()
+# [(plt.scatter(be[1][0], be[1][1], c='r')) for be in best_candidates]
+# plt.show()
 
 # TODO use the color sensor afterward
