@@ -50,7 +50,7 @@ class Thymio:
         print("dbus error: %s" % str(e))
 
     def selectGender(self):
-        return 0 if randint(0, 1) else 1
+        return randint(0, 1)
 
     # Periodically increase confidence
     def confidence(self):
@@ -77,6 +77,16 @@ class Thymio:
     def receiveInformation(self):
         self.rx = asebaNetwork.GetVariable("thymio-II", "prox.comm.rx")
         print(rx[0])
+
+    # Move the robot
+    def step(self, left, right):
+        self.aseba.SendEventName("motor.target", [left, right])
+
+    # Stop the robot's motion
+    def stop(self):
+        left_wheel = 0
+        right_wheel = 0
+        self.aseba.SendEventName("motor.target", [left_wheel, right_wheel])
 
     def wander(self):
 
