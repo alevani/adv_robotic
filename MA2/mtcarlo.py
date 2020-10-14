@@ -8,6 +8,7 @@ from math import floor
 from random import *
 import shapely
 import sys
+from time import sleep
 
 
 class ParticleFiltering:
@@ -20,7 +21,7 @@ class ParticleFiltering:
             [(self.W/2, self.H/2), (-self.W/2, self.H/2), (-self.W/2, -self.H/2), (self.W/2, -self.H/2)])
 
         self.nb_samples = 200
-        self.nb_candidates = 10
+        self.nb_candidates = 20
         self.scan_data = [0]*360
 
         # Create nb_samples samples
@@ -80,7 +81,7 @@ class ParticleFiltering:
 
     # Return the values thymio lidar sensor
     def get_lidar_values(self):
-        return self.get_simulated_lidar_values((0, 0, 0))
+        return self.get_simulated_lidar_values((.25, .25, 90))
         # return [self.scan_data[x] / 1000 for x in list(range(0, 360, 36))]
 
     # Return the nb_candidates best candidates
@@ -107,15 +108,16 @@ class ParticleFiltering:
                 b[1][0] += self.x
                 b[1][1] += self.y
                 b[1][2] += self.angle
-
+                # ? reset to zero as it should only be done once?
+                self.set_xya(0, 0, 0)
                 # Creates nb_candidates new subsample for each best candidate
                 for _ in range(0, self.nb_candidates):
                     # Resample around a 1 centimer wide box.
-                    x = b[1][0] + uniform(-0.01, 0.01)
-                    y = b[1][1] + uniform(-0.01, 0.01)
+                    x = b[1][0] + uniform(-0.03, 0.03)
+                    y = b[1][1] + uniform(-0.03, 0.03)
                     a = (b[1][2] + randint(-10, 10)) % 360
 
-                    # Keeps the resampling in the box
+                    # Keeps the resampling in the arena
                     if x > .96:
                         x = .96
                     elif x < -.96:
@@ -129,7 +131,8 @@ class ParticleFiltering:
                     re_candidates.append([x, y, a])
 
             self.best_candidates = self.get_best_candidates(re_candidates)
-            self.position = self.avg_xya(self.best_candidates)
+            # self.position = self.avg_xya(self.best_candidates)
+            self.position = self.best_candidates[1]
 
 
 if __name__ == '__main__':
@@ -139,9 +142,10 @@ if __name__ == '__main__':
     thread = Thread(target=pf.Localize)
     thread.daemon = True
     thread.start()
-    pf.set_xya(0, 0, 0)
+    pf.set_xya(.25, .25, 90)
     try:
         while True:
+            sleep(0.1)
             print(pf.position)
 
     except KeyboardInterrupt:
