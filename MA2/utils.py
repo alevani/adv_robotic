@@ -3,6 +3,7 @@ various utilitary function
 '''
 from cv2 import *
 from matplotlib.colors import hsv_to_rgb, rgb_to_hsv
+from math import atan, abs, cos, sin
 
 DEBUG = True
 
@@ -22,6 +23,11 @@ def debug_img(img, title=''):
     if DEBUG:
         show(img, title='')
 
+def polar2cart(a, r):
+    x = r * sin(a)
+    y = r * cos(a)
+    return (x, y)
+
 def caculate_angle_to_dest(robot_angle,
                            robot_x, robot_y,
                            dest_x, dest_y):
@@ -30,7 +36,6 @@ def caculate_angle_to_dest(robot_angle,
     destination to calculate the angle of the destination from the origin.
     Angles are in degrees.
     """
-    from math import atan, abs
     dx = abs(robot_x - dest_x)
     dy = abs(robot_y - dest_y)
     if dest_x > robot_x:
