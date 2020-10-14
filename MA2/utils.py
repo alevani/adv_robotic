@@ -22,6 +22,31 @@ def debug_img(img, title=''):
     if DEBUG:
         show(img, title='')
 
+def caculate_angle_to_dest(robot_angle,
+                           robot_x, robot_y,
+                           dest_x, dest_y):
+    """
+    Use the angle of the robot, its position, and the position of the
+    destination to calculate the angle of the destination from the origin.
+    Angles are in degrees.
+    """
+    from math import atan, abs
+    dx = abs(robot_x - dest_x)
+    dy = abs(robot_y - dest_y)
+    if dest_x > robot_x:
+        a = atan(dy/dx)
+        if dest_y > robot_y:
+            return a
+        elif dest_y <= robot_y:
+            return 360 - a
+    elif dest_x <= robot_x:
+        a = atan(dx/dy)
+        if dest_y > robot_y:
+            return 90 + a
+        elif dest_y <= robot_y:
+            return 270 - a 
+
+
 def get_center(cnt):
     # https://www.pyimagesearch.com/2016/02/01/opencv-center-of-contour/
     M = cv2.moments(cnt)
@@ -29,3 +54,9 @@ def get_center(cnt):
     cY = int(M["m01"] / M["m00"])
     return (cX, cY)
 
+if __name__ == '__main__':
+    from sys import argv
+    r = int(argv[1])
+    g = int(argv[2])
+    b = int(argv[3])
+    print(rgb2hsv(r, g, b))

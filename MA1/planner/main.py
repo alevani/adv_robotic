@@ -84,7 +84,6 @@ def try_move_agent(dir, apos, cur_map) ->  tuple:
             return (apos, False)
         else:
             return (move_agent(dir, apos), True)
-
         
     elif next_ == BLOCK.ROBOT:
         raise Exception("Impossible move")
@@ -222,8 +221,8 @@ def bfs( agents):
             SOLUTIONS.append(agents)
             debug(SOLUTIONS)
             debug(SHORTEST_PATH_TO_STATE[hash_agent(agents)])
-            return 
             # input("enter to continue")
+            return 
         elif diam_on_corner(cur_map):
             continue
         elif diam_on_empty_edge(cur_map):

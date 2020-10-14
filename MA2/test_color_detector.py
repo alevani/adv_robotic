@@ -35,8 +35,8 @@ def test_4color_image():
     # show(output)
 
 
-def test_video():
-    video = VideoCapture('img/320x240.mp4')
+def test_video(video_file='img/320x240.mp4'):
+    video = VideoCapture(video_file)
     if (video.isOpened()== False):
         print('Error read video')
     rgb_color = {
@@ -93,4 +93,4 @@ def test_video():
     cv2.destroyAllWindows()  
 
 if __name__ == '__main__':
-    test_video()
+    test_video('img/raspi_320x240.h264')

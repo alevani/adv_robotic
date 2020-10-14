@@ -33,8 +33,8 @@ def yellow_mask(hsv_image):
 
 
 def green_mask(hsv_image):
-    dark = np.array([53, 100, 100])
-    light = np.array([75, 255, 255])
+    dark = np.array([40, 100, 50])
+    light = np.array([60, 255, 255])
     mask = cv2.inRange(hsv_image, dark, light)
     return mask
 
