@@ -11,6 +11,8 @@ import threading
 import dbus
 import os
 
+#! close unused thread?
+
 os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
 
 
@@ -65,6 +67,8 @@ class Thymio:
 
         self.dancefloor = [(.4, .3), (.4, -.3), (-.4, .3),
                            (-.4, -.3)]  # dancefloor position
+
+        self.markers = [(.98, -.60), (.98, .60), (-.98, .60), (-.98, -.60)]
         self.aseba = self.asebaNetwork
 
     def setup(self):
@@ -126,14 +130,22 @@ class Thymio:
                 self.dance(self.rx)
         self.wander()
 
-    def wander(self):
+    def mate(self):
         while not self.hasPartner:
-            # move around arena
+            sleep(0.1)
             if self.rx < 3 and not self.gender:
                 danceFloor = randint(3, 6)
                 for _ in range(5):
                     self.sendInformation(danceFloor)
                 self.hasPartner = True
+
+    def wander(self):
+        self.thread = Thread(target=self.mate)
+        self.thread.daemon = True
+        self.thread.start()
+        while not self.hasPartner:
+            for marker in self.markers:
+                self.goto(marker)
         self.dance(dancefloor)
 
     def rotate(self):
@@ -154,28 +166,30 @@ class Thymio:
         rotation = caculate_angle_to_dest(pos[2], pos[1], pos[0], x, y)
 
         # TODO add +-5/10 angle degree
-        while pos[2] != rotation:
+        while pos[2] != rotation and not self.hasPartner:
             pos = self.particleFilter.position
             self.rotate()
 
         # TODO add +-5cm d'erreur
-        while (pos[0], pos[1]) != (x, y):
+        while (pos[0], pos[1]) != (x, y) and not self.hasPartner:
             pos = self.particleFilter.position
             self.forward()
+
+    def dance(self, df):
+        self.hasPartner = False
+        goto(self.dancefloor[df-3])
+        # dance
+        self.rest()
+
+    def rest(self):
+        # goes to the wall and remain still
+        pass
 
 
 if __name__ == '__main__':
     rest = False
     try:
         robot = Thymio()
-        robot.step(200, 200, 0)
-        while not rest:
-            pass
-            # if robot.confidence > 10:
-            #     robot.resetConfidence()
-            #     # robot.wander()
-            #     rest = True
-
     except KeyboardInterrupt:
         print("Stopping robot")
         exit_now = True
