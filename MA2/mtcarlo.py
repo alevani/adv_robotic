@@ -10,6 +10,8 @@ import shapely
 import sys
 from time import sleep
 
+scatter = []
+
 
 class ParticleFiltering:
     def __init__(self):
@@ -28,8 +30,14 @@ class ParticleFiltering:
         self.samples = [[uniform(-.96, .96), uniform(-0.58, .58), randint(0, 360)]
                         for _ in range(0, self.nb_samples)]
 
+        # [plt.scatter(i[0], i[1]) for i in self.samples]
+        # plt.xlim(-.98, .98)
+        # plt.ylim(-.60, .60)
+        # plt.show()
+
         self.best_candidates = self.get_best_candidates(self.samples)
         # [(plt.scatter(be[1][0], be[1][1], c='b')) for be in best_candidates]
+        scatter.append(self.best_candidates)
 
         self.x = 0.0
         self.y = 0.0
@@ -109,7 +117,7 @@ class ParticleFiltering:
                 b[1][1] += self.y
                 b[1][2] += self.angle
                 # ? reset to zero as it should only be done once?
-                self.set_xya(0, 0, 0)
+                # self.set_xya(0, 0, 0)
                 # Creates nb_candidates new subsample for each best candidate
                 for _ in range(0, self.nb_candidates):
                     # Resample around a 1 centimer wide box.
@@ -131,8 +139,8 @@ class ParticleFiltering:
                     re_candidates.append([x, y, a])
 
             self.best_candidates = self.get_best_candidates(re_candidates)
-            # self.position = self.avg_xya(self.best_candidates)
-            self.position = self.best_candidates[1]
+            self.position = self.avg_xya(self.best_candidates)
+            scatter.append(self.best_candidates)
 
 
 if __name__ == '__main__':
@@ -142,10 +150,20 @@ if __name__ == '__main__':
     thread = Thread(target=pf.Localize)
     thread.daemon = True
     thread.start()
-    pf.set_xya(.25, .25, 90)
+    # pf.set_xya(0, 0, 90)
     try:
         while True:
-            sleep(0.1)
+            sleep(.1)
+            if len(scatter) > 10:
+                for s in scatter:
+                    [plt.scatter(i[1][0], i[1][1]) for i in s]
+                    plt.xlim(-.98, .98)
+                    plt.ylim(-.60, .60)
+                    plt.show()
+            # [plt.scatter(i[1][0], i[1][1]) for i in pf.best_candidates]
+            # plt.xlim(-.98, .98)
+            # plt.ylim(-.60, .60)
+            # plt.show()
             print(pf.position)
 
     except KeyboardInterrupt:

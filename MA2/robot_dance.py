@@ -1,52 +1,74 @@
 #!/usr/bin/python3
-import dbus.mainloop.glib
-import dbus
 from threading import Thread
-from time import sleep
-import threading
 from random import randint
+import dbus.mainloop.glib
 from numpy import arctan
-import os
+from time import sleep
 from mtcarlo import *
+from time import time
+from utils import *
+import threading
+import dbus
+import os
 
-# initialize asebamedulla in background and wait 0.3s to let
-# asebamedulla startup
+#! close unused thread?
+
 os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
 
 
 class Thymio:
     def __init__(self):
-        print("Setting up")
+        print("Thymio init...")
+
+        print("[ASEBA] bus init..")
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         bus = dbus.SessionBus()
         self.asebaNetworkObject = bus.get_object("ch.epfl.mobots.Aseba", "/")
 
+        print("[ASEBA] Network object init..")
         self.asebaNetwork = dbus.Interface(
             self.asebaNetworkObject, dbus_interface="ch.epfl.mobots.AsebaNetwork"
         )
-        # load the file which is run on the thymio
+
+        print("[ASEBA] Load file")
         self.asebaNetwork.LoadScripts(
             "thympi.aesl", reply_handler=self.dbusError, error_handler=self.dbusError
         )
 
-        # give th robot a gender, a change its color accordingly
-        self.gender = self.selectGender()
-        self.asebaNetwork.SendEventName(
-            "led.top", (255, 0, 0) if self.gender else (0, 0, 255))
+        print("Gender attribution")
+        self.gender = randint(1, 2)
+        # self.asebaNetwork.SendEventName(
+        #     "led.top", (255, 0, 0) if self.gender else (0, 0, 255))
 
+        print("Start Growing confidence...")
         self.confidence = 0
         self.growConfidence()
 
+        print("Particle filtering init..")
         self.particleFilter = ParticleFiltering()
         self.particleFilter.set_xya(0, 0, 0)
 
-        print('start particle filtering thread')
+        print('Start particle filtering thread')
         self.thread = Thread(target=self.particleFilter.Localize)
         self.thread.daemon = True
         self.thread.start()
 
+        print('Start sensing thread')
+        self.threadSense = Thread(target=self.sense)
+        self.threadSense.daemon = True
+        self.threadSense.start()
+
+        print("Start communication")
+        self.startCommunication()
+        self.sendInformation()
+        self.receiveInformation()
+
+        self.hasPartner = False
+
         self.dancefloor = [(.4, .3), (.4, -.3), (-.4, .3),
                            (-.4, -.3)]  # dancefloor position
+
+        self.markers = [(.98, -.60), (.98, .60), (-.98, .60), (-.98, -.60)]
         self.aseba = self.asebaNetwork
 
     def setup(self):
@@ -56,43 +78,38 @@ class Thymio:
         os.system("pkill -n asebamedulla")
 
     def dbusError(self, e):
-        # dbus errors can be handled here.
-        # Currently only the error is logged. Maybe interrupt the mainloop here
         print("dbus error: %s" % str(e))
-
-    def selectGender(self):
-        return randint(0, 1)
 
     # Periodically increase confidence
     def growConfidence(self):
         self.confidence += 1
-        # rx = self.receiveInformation()
-        rx = 1
-        if not rx == 0:  # ! change on depending what RX receive
-            threading.Timer(2, self.growConfidence).start()
-        else:
-            self.dance(rx)
-
-    def getConfidence(self):
-        return self.confidence
+        threading.Timer(2, self.growConfidence).start()
 
     def resetConfidence(self):
         self.confidence = 0
 
-    # def startCommunication(self):
-    #     # this enables the prox.com communication channels
-    #     self.asebaNetwork.SendEventName("prox.comm.enable", [1])
-    #     # This enables the prox.comm rx value to zero, gets overwritten when receiving a value
-    #     self.asebaNetwork.SendEventName("prox.comm.rx", [0])
+    def startCommunication(self):
+        self.asebaNetwork.SendEventName("prox.comm.enable", [1])
+        self.asebaNetwork.SendEventName("prox.comm.rx", [0])
 
-    # # Remeber to change tx number when finding a partner
-    # def sendInformation(self, number):
-    #     self.asebaNetwork.SendEventName("prox.comm.tx", [number])
+    # ? Remeber to change tx number when finding a partner -> wuat?
+    def sendInformation(self):
+        self.asebaNetwork.SendEventName("prox.comm.tx", [self.gender])
+        threading.Timer(.1, self.sendInformation).start()
 
-    # # Remeber to change rx number after confirming a partner. This can be done the same way as the tx :)
-    # def receiveInformation(self):
-    #     self.rx = asebaNetwork.GetVariable("thymio-II", "prox.comm.rx")
-    #     return rx[0]
+    # Remeber to change rx number after confirming a partner. This can be done the same way as the tx :)
+    def receiveInformation(self):
+        self.rx = asebaNetwork.GetVariable("thymio-II", "prox.comm.rx")
+        threading.Timer(.1, self.receiveInformation).start()
+
+    # TODO do something with it
+    def sense(self):
+        while True:
+            self.prox_horizontal = self.aseba.GetVariable(
+                "thymio-II", "prox.horizontal")
+            # adapt values depending on distance we want to keep from robots and light
+            if(self.prox_horizontal[2] >= 2900 and self.prox_horizontal[1] >= 1500) or (self.prox_horizontal[2] >= 2900 and self.prox_horizontal[3] >= 1500) or (self.prox_horizontal[2] >= 2900 and self.prox_horizontal[1] >= 1500 and self.prox_horizontal[3] >= 1500):
+                self.stop()
 
     # Move the robot
     def step(self, left, right, angle):
@@ -107,22 +124,29 @@ class Thymio:
         right_wheel = 0
         self.aseba.SendEventName("motor.target", [left_wheel, right_wheel])
 
+    def benchwarm(self):
+        while self.confidence <= 10:
+            if(self.rx > 2):
+                self.dance(self.rx)
+        self.wander()
+
+    def mate(self):
+        while not self.hasPartner:
+            sleep(0.1)
+            if self.rx < 3 and not self.gender:
+                danceFloor = randint(3, 6)
+                for _ in range(5):
+                    self.sendInformation(danceFloor)
+                self.hasPartner = True
+
     def wander(self):
-        pos = self.particleFilter.position
-        lidar = self.particleFilter.get_lidar_values
-        #     # self.rest()
-
-    def dance(self, d):
-        #! goto dancefloor
-        dfPos = self.dancefloor[d]
-        self.stop()
-        pass
-
-    def find_angle(self, pos1, pos2):
-        dy = abs(pos2[1] - pos1[1])
-        dx = abs(pos2[0] - pos1[0])
-        alpha = arctan(dy/dx)
-        return 180 - alpha - pos1[2]
+        self.thread = Thread(target=self.mate)
+        self.thread.daemon = True
+        self.thread.start()
+        while not self.hasPartner:
+            for marker in self.markers:
+                self.goto(marker)
+        self.dance(dancefloor)
 
     def rotate(self):
         # TODO move robot from 1 degree
@@ -139,34 +163,33 @@ class Thymio:
 
     def goto(self, x, y):
         pos = self.particleFilter.position
-        rotation = self.find_angle(pos, (x, y))
+        rotation = caculate_angle_to_dest(pos[2], pos[1], pos[0], x, y)
 
-        while pos[2] != rotation:
+        # TODO add +-5/10 angle degree
+        while pos[2] != rotation and not self.hasPartner:
             pos = self.particleFilter.position
             self.rotate()
-        while (pos[0], pos[1]) != (x, y):
+
+        # TODO add +-5cm d'erreur
+        while (pos[0], pos[1]) != (x, y) and not self.hasPartner:
             pos = self.particleFilter.position
             self.forward()
 
+    def dance(self, df):
+        self.hasPartner = False
+        goto(self.dancefloor[df-3])
+        # dance
+        self.rest()
 
-def dance(self):
-        # Robot become purple
-    self.aseba.SendEventName(
-        "led.top", (255, 0, 255))
+    def rest(self):
+        # goes to the wall and remain still
+        pass
 
 
 if __name__ == '__main__':
     rest = False
     try:
         robot = Thymio()
-        robot.step(200, 200, 0)
-        while not rest:
-            pass
-            # if robot.getConfidence() > 10:
-            #     robot.resetConfidence()
-            #     # robot.wander()
-            #     rest = True
-
     except KeyboardInterrupt:
         print("Stopping robot")
         exit_now = True
