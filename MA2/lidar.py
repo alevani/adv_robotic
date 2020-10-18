@@ -1,12 +1,13 @@
 from adafruit_rplidar import RPLidar
 import threading
 
-NB_SAMPLES = 36
+NB_STOP = 10
 
 
 class Lidar:
-    def __init__(self, nb_samples=NB_SAMPLES):
-        self.nb_samples = nb_samples
+    def __init__(self, nb_stop=NB_STOP):
+        self.nb_stop = nb_stop
+        self.nb_samples = 360 / nb_stop
 
         PORT_NAME = '/dev/ttyUSB0'
         self.lidar = RPLidar(None, PORT_NAME)
