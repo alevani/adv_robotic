@@ -141,6 +141,7 @@ class Thymio:
         self.thread.start()
         while not self.hasPartner:
             for marker in self.markers:
+                # Collision avoidence
                 self.goto(marker)
         self.dance(dancefloor)
 
