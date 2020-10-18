@@ -68,6 +68,8 @@ class Thymio:
         self.sendInformation()
         self.receiveInformation()
 
+        self.is_there_a_robot_in_front = False
+
         self.hasPartner = False
 
         self.dancefloor = [Position(.4, .3), Position(.4, -.3), Position(-.4, .3),
@@ -111,14 +113,15 @@ class Thymio:
         self.rx = asebaNetwork.GetVariable("thymio-II", "prox.comm.rx")
         threading.Timer(.1, self.receiveInformation).start()
 
-    # TODO do something with it
     def sense(self):
         while True:
             self.prox_horizontal = self.aseba.GetVariable(
                 "thymio-II", "prox.horizontal")
             # adapt values depending on distance we want to keep from robots and light
             if(self.prox_horizontal[2] >= 2900 and self.prox_horizontal[1] >= 1500) or (self.prox_horizontal[2] >= 2900 and self.prox_horizontal[3] >= 1500) or (self.prox_horizontal[2] >= 2900 and self.prox_horizontal[1] >= 1500 and self.prox_horizontal[3] >= 1500):
-                self.stop()
+                self.is_there_a_robot_in_front = True
+            else:
+                self.is_there_a_robot_in_front = False
 
     # Move the robot
     def step(self, left, right, angle):
@@ -144,15 +147,17 @@ class Thymio:
         log.warn("Mate process started.")
         while not self.hasPartner:
             sleep(0.1)
-            if self.rx < 3 and not self.gender:
-                log.warn("Partner found")
-                log.robot("T'as de beaux yeux tu sais")
-                log.robot("*Pokemon battle music intensifies*")
-                danceFloor = randint(3, 6)
-                for _ in range(5):
-                    self.sendInformation(danceFloor)
-                log.warn("Dance floor sent to partner (5x)")
-                self.hasPartner = True
+           #! might be very sketchy (the sense  thread)
+            if self.is_there_a_robot_in_front:
+                if self.rx < 3 and not self.gender:
+                    log.warn("Partner found")
+                    log.robot("T'as de beaux yeux tu sais")
+                    log.robot("*Pokemon battle music intensifies*")
+                    danceFloor = randint(3, 6)
+                    for _ in range(5):
+                        self.sendInformation(danceFloor)
+                    log.warn("Dance floor sent to partner (5x)")
+                    self.hasPartner = True
 
     def wander(self):
         log.warn("Enough confidence, now wandering.")
@@ -160,7 +165,6 @@ class Thymio:
         self.thread.start()
         while not self.hasPartner:
             for marker in self.markers:
-                # Collision avoidence
                 self.goto(marker)
         self.dance(dancefloor)
 
@@ -196,11 +200,19 @@ class Thymio:
         rotation = caculate_angle_to_dest(
             robot.x, robot.y, robot.angle, position.x, position.y)
 
-        while not self.is_close_to_angle(robot, rotation) and not self.hasPartner:
+        while not self.is_close_to_angle(robot, rotation) and not self.hasPartner and not self.is_there_a_robot_in_front:
             self.rotate()
 
-        while not self.is_close_to_position(robot, position) and not self.hasPartner:
+        while not self.is_close_to_position(robot, position) and not self.hasPartner and not self.is_there_a_robot_in_front:
             self.forward()
+
+        # if robot in front, sleep for 2sec, the mating thread is still going and does its job.
+        if self.is_there_a_robot_in_front:
+            sleep(2)
+            if not self.hasPartner:
+                # TODO hardcode avoidence position
+                #  Recall function to keep moving to the same marker / position
+                self.goto(position)
 
     def dance(self, df):
         log.robot("Yaaah, let's go dance to ", df, "!")
