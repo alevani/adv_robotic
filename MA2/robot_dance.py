@@ -19,7 +19,7 @@ os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
 
 
 class Thymio:
-    def __init__(self):
+    def __init__(self, particle_filter):
         print("Thymio init...")
 
         print("[ASEBA] bus init..")
@@ -185,6 +185,8 @@ if __name__ == '__main__':
         lidar = Lidar()
         pf = ParticleFiltering(lidar)
         robot = Thymio(pf)
+
+
 
     except KeyboardInterrupt:
         print("Stopping robot")
