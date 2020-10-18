@@ -17,7 +17,6 @@ NB_BEST_CANDIDATES = 20
 NB_LIDAR_RAY = 4
 
 
-@dataclass
 class World:
     def __init__(self):
         self.H = 1.18  # width of arena in meters
@@ -103,17 +102,16 @@ def create_random_sample(size=NB_SAMPLES, world=WORLD) -> list:
 
 
 def get_best_candidates(samples,
-                        real_robot,
+                        real_robot_lidar,
                         nb_best_candidates=NB_BEST_CANDIDATES):
     '''
     Return the best candidates from a list of virtual robots positions
     compared to the real robot lidar values.
     '''
     candidates = []
-    rrl = real_robot.get_simulated_lidar_values()
     for virtual_robot in samples:
         vrl = virtual_robot.get_simulated_lidar_values()
-        fit = lidar_fitness(rrl, vrl)
+        fit = lidar_fitness(real_robot_lidar, vrl)
         candidates.append((virtual_robot, fit))
 
     candidates.sort(key=lambda candidates: candidates[1])
@@ -150,21 +148,23 @@ def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
 
 if __name__ == '__main__':
     WORLD = World()
-    time_to_localise = 10
+    convergence_iteration = 10
 
     real_robot = Robot(x=.8, y=-0.23, angle=57)
     # real_robot = Robot(angle=0, x=0, y=0)
     sample = create_random_sample()
+
     try:
         while True:
             raw = input('continue')
             if len(raw) > 0:
-                xy = [ float(x) for x in raw.split(',') ]
+                xy = [float(x) for x in raw.split(',')]
                 print(xy)
                 real_robot.x += xy[0]
                 real_robot.y += xy[1]
-            for _ in range(time_to_localise):
-                best_candidates = get_best_candidates(sample, real_robot)
+            for _ in range(convergence_iteration):
+                real_robot_lidar = real_robot.get_simulated_lidar_values()
+                best_candidates = get_best_candidates(sample, real_robot_lidar)
                 # print("best_candidates", best_candidates)
                 print("best", best_candidates[0])
                 # print(best_candidates[0].which_corner())
