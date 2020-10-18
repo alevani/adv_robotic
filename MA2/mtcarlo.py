@@ -1,12 +1,13 @@
-from shapely.geometry import LinearRing, LineString, Point, Polygon
-from numpy import sin, cos, pi, sqrt, subtract, std, mean, array
-import matplotlib.pyplot as plt
+from dataclasses import dataclass
+from Lidar import Lidar
 from math import floor, radians
+from numpy import sin, cos, pi, sqrt, subtract, std, mean, array
 from random import *
+from shapely.geometry import LinearRing, LineString, Point, Polygon
+from time import sleep
+import matplotlib.pyplot as plt
 import shapely
 import sys
-from time import sleep
-from dataclasses import dataclass
 
 WORLD = None  # gonna be defined after World
 NB_SAMPLES = 200
@@ -83,8 +84,8 @@ class Robot:
 
     def __repr__(self):
         return ("({}, {}, {})".format(
-            round(self.x, 2),
-            round(self.y, 2),
+            round(self.x, 3),
+            round(self.y, 3),
             self.angle))
 
 
@@ -151,27 +152,48 @@ def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
 
 
 class ParticleFiltering:
-    def __init__(self, real_lidar):
+    def __init__(self, real_lidar: Lidar):
         self.position = None
         self.real_lidar = real_lidar
+        self.dx = 0
+        self.dy = 0
+        self.da = 0
 
-    def set_position(self, robot):
-        self.position = robot
+    def set_delta(self, dx, dy, da):
+        self.dx = dx
+        self.dy = dy
+        self.da = da
+
+    def move_sample(self, sample):
+        new_sample = []
+        for r in sample:
+            nr = Robot(angle = r.angle + self.da,
+                       x = r.x + self.dx,
+                       y = r.y + self.dy)
+            new_sample.append(nr)
+        self.dx = 0
+        self.dy = 0
+        self.da = 0
+        return new_sample
 
     def localise(self):
         convergence_iteration = 10
         sample = create_random_sample()
         try:
             while True:
+
+                sample = self.move_sample(sample)
+                real_robot_lidar = self.real_lidar.get_scan_data()
+
                 for _ in range(convergence_iteration):
-                    real_robot_lidar = self.lidar.get_scan_data()
                     best_candidates = get_best_candidates(
                         sample, real_robot_lidar)
-                    self.set_position(best_candidates[0])
+                    # self.set_position(best_candidates[0])
                     new_candidates = []
                     for virtual_robot in best_candidates:
                         cs = resample_around(virtual_robot)
                         new_candidates.extend(cs)
+                    print(best_candidates[0])
                     sample = new_candidates
 
         except KeyboardInterrupt:
@@ -179,8 +201,17 @@ class ParticleFiltering:
 
 
 if __name__ == '__main__':
-    WORLD = World()
+    from Lidar import FakeLidar
+    fake_lidar = FakeLidar(Robot(x=0.30, y=0.50, angle=35))
+    pf = ParticleFiltering(fake_lidar)
+    pf.localise()
 
+
+
+# not used but usefull
+
+def old_main():
+    WORLD = World()
     convergence_iteration = 10
     real_robot = Robot(x=.8, y=-0.23, angle=57)
     # real_robot = Robot(angle=0, x=0, y=0)
@@ -209,6 +240,6 @@ if __name__ == '__main__':
                 sample = new_candidates
 
                 # sleep(0.1)
-
     except KeyboardInterrupt:
         sys.exit()
+
