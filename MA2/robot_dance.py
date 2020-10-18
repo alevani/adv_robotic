@@ -7,11 +7,10 @@ from time import sleep
 from mtcarlo import *
 from time import time
 from utils import *
-from lidar import Lidar
-
 import threading
 import dbus
 import os
+from Lidar import *
 
 #! close unused thread?
 
