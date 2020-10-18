@@ -15,15 +15,14 @@ class Lidar:
 
         print('start lidar scan thread')
         self.scanner_thread = threading.Thread(target=self.lidarScan)
-        self.scanner_thread.daemon = True
         self.scanner_thread.start()
 
     def lidarScan(self):
-        #! while true?
         print("Starting background lidar scanning")
-        for scan in self.lidar.iter_scans():
-            for (_, angle, distance) in scan:
-                self.scan_data[min([359, floor(angle)])] = distance
+        while True:
+            for scan in self.lidar.iter_scans():
+                for (_, angle, distance) in scan:
+                    self.scan_data[min([359, floor(angle)])] = distance
 
     def get_scan_data(self):
         return [self.scan_data[x] / 1000 for x in list(range(0, 360, self.nb_samples))]

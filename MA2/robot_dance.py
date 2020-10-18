@@ -48,7 +48,6 @@ class Thymio:
 
         print('Start sensing thread')
         self.threadSense = Thread(target=self.sense)
-        self.threadSense.daemon = True
         self.threadSense.start()
 
         print("Start communication")
@@ -134,7 +133,6 @@ class Thymio:
 
     def wander(self):
         self.thread = Thread(target=self.mate)
-        self.thread.daemon = True
         self.thread.start()
         while not self.hasPartner:
             for marker in self.markers:
