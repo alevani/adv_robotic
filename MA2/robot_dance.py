@@ -18,7 +18,7 @@ os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
 
 
 class Thymio:
-    def __init__(self):
+    def __init__(self, particle_filter):
         print("Thymio init...")
 
         print("[ASEBA] bus init..")
@@ -26,6 +26,7 @@ class Thymio:
         bus = dbus.SessionBus()
         self.asebaNetworkObject = bus.get_object("ch.epfl.mobots.Aseba", "/")
 
+        self.pf = particle_filter
         print("[ASEBA] Network object init..")
         self.asebaNetwork = dbus.Interface(
             self.asebaNetworkObject, dbus_interface="ch.epfl.mobots.AsebaNetwork"
@@ -192,6 +193,8 @@ if __name__ == '__main__':
         lidar = Lidar()
         pf = ParticleFiltering(lidar)
         robot = Thymio(pf)
+
+
 
     except KeyboardInterrupt:
         print("Stopping robot")
