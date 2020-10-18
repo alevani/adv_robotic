@@ -44,15 +44,6 @@ class Thymio:
         self.confidence = 0
         self.growConfidence()
 
-        print("Particle filtering init..")
-        self.particleFilter = ParticleFiltering()
-        self.particleFilter.set_xya(0, 0, 0)
-
-        print('Start particle filtering thread')
-        self.thread = Thread(target=self.particleFilter.Localize)
-        self.thread.daemon = True
-        self.thread.start()
-
         print('Start sensing thread')
         self.threadSense = Thread(target=self.sense)
         self.threadSense.daemon = True
