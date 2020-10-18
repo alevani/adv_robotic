@@ -16,6 +16,15 @@ from Lidar import *
 
 os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
 
+ERROR_ANGLE = 2
+ERROR_DISTANCE = 3
+
+
+@dataclass
+class Position:
+    x: float
+    y: float
+
 
 class Thymio:
     def __init__(self, particle_filter):
@@ -57,10 +66,11 @@ class Thymio:
 
         self.hasPartner = False
 
-        self.dancefloor = [(.4, .3), (.4, -.3), (-.4, .3),
-                           (-.4, -.3)]  # dancefloor position
+        self.dancefloor = [Position(.4, .3), Position(.4, -.3), Position(-.4, .3),
+                           Position(-.4, -.3)]  # dancefloor position
 
-        self.markers = [(.98, -.60), (.98, .60), (-.98, .60), (-.98, -.60)]
+        self.markers = [Position(.98, -.60), Position(.98, .60),
+                        Position(-.98, .60), Position(-.98, -.60)]
         self.aseba = self.asebaNetwork
 
         self.benchwarm()
@@ -107,7 +117,7 @@ class Thymio:
 
     # Move the robot
     def step(self, left, right, angle):
-        # self.particleFilter.set_xya(left, right, angle)
+        # self.pf.set_xya(left, right, angle)
         self.aseba.SendEventName("motor.target", [left, right])
         sleep(10)
         self.stop()
@@ -147,32 +157,41 @@ class Thymio:
         self.dance(dancefloor)
 
     def rotate(self):
-        # TODO move robot from 1 degree
-        pos = self.particleFilter.position
-        pos[2] += 1
-        self.particleFilter.set_xya(pos)
+        step = 1
+        # TODO move robot physically from 1 degree
+        self.pf.set_delta(0, 0, step)
 
     def forward(self):
-        # TODO forward from .5 centimeter?
-        pos = self.particleFilter.position
-        pos[0] += 1  # TODO calculate with angle, +1 is wrong
-        pos[1] += 1  # TODO calculate with angle, +1 is wrong
-        self.particleFilter.set_xya(pos)
+        # TODO forward physically from .5 centimeter?
+        step = 0.01
 
-    def goto(self, x, y):
-        pos = self.particleFilter.position
-        # ! -> to change, surly it's gonna crash
-        print("From ", pos, " go to ", str(x), " ", str(y))
-        rotation = caculate_angle_to_dest(pos[2], pos[1], pos[0], x, y)
+        #! is that correct?
+        dx, dy = polarToCart(step, robot.angle)
+        self.pf.set_delta(dx, dy,  0)
 
-        # TODO add +-5/10 angle degree
-        while pos[2] != rotation and not self.hasPartner:
-            pos = self.particleFilter.position
+    def is_close_to_position(self, robot, pos):
+        if abs(robot.x - pos.x) < ERROR_DISTANCE and abs(robot.y - pos.y) < ERROR_DISTANCE:
+            return True
+        return False
+
+    def is_close_to_angle(self, robot, angle):
+        if abs(robot.angle - angle) < ERROR_ANGLE:
+            return True
+        return False
+
+    def goto(self, position):
+        robot = self.pf.position
+
+        print("From ", robot.x, robot.y, robot.angle,
+              " go to ", position.x, " ", position.y)
+
+        rotation = caculate_angle_to_dest(
+            robot.x, robot.y, robot.angle, position.x, position.y)
+
+        while not self.is_close_to_angle(robot, rotation) and not self.hasPartner:
             self.rotate()
 
-        # TODO add +-5cm d'erreur
-        while (pos[0], pos[1]) != (x, y) and not self.hasPartner:
-            pos = self.particleFilter.position
+        while not self.is_close_to_position(robot, position) and not self.hasPartner:
             self.forward()
 
     def dance(self, df):
@@ -193,8 +212,6 @@ if __name__ == '__main__':
         lidar = Lidar()
         pf = ParticleFiltering(lidar)
         robot = Thymio(pf)
-
-
 
     except KeyboardInterrupt:
         print("Stopping robot")
