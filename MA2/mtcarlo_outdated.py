@@ -1,3 +1,4 @@
+#! Outdated, since it's not super redeable, mtcarlo.py is now POO and more redeable
 from shapely.geometry import LinearRing, LineString, Point, Polygon
 from numpy import sin, cos, pi, sqrt, subtract, std, mean, array
 # from adafruit_rplidar import RPLidar

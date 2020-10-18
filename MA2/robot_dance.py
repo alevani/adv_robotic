@@ -33,7 +33,7 @@ class Thymio:
     def __init__(self, particle_filter):
 
         log.warn("Initialisation")
-        log.warn("[ASEBA] bus initialisation..")
+        log.warn("bus initialisation..")
 
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         bus = dbus.SessionBus()
@@ -45,7 +45,7 @@ class Thymio:
             self.asebaNetworkObject, dbus_interface="ch.epfl.mobots.AsebaNetwork"
         )
 
-        log.aseba("[ASEBA] Load file")
+        log.aseba("Load file")
         self.asebaNetwork.LoadScripts(
             "thympi.aesl", reply_handler=self.dbusError, error_handler=self.dbusError
         )
@@ -75,6 +75,7 @@ class Thymio:
 
         self.markers = [Position(.98, -.60), Position(.98, .60),
                         Position(-.98, .60), Position(-.98, -.60)]
+
         self.aseba = self.asebaNetwork
 
         self.benchwarm()
@@ -211,6 +212,7 @@ class Thymio:
     def rest(self):
         log.robot("Whoo, I am exhausted, I will rest for now.")
         # goes to the wall and remain still
+        self.stop()
         pass
 
 
@@ -222,6 +224,7 @@ if __name__ == '__main__':
         robot = Thymio(pf)
 
     except KeyboardInterrupt:
+        log.error("Keyboard interrupt")
         log.error("Stopping robot")
         exit_now = True
         sleep(1)
