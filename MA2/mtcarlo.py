@@ -4,169 +4,179 @@ from numpy import sin, cos, pi, sqrt, subtract, std, mean, array
 import threading
 from threading import Thread
 import matplotlib.pyplot as plt
-from math import floor
+from math import floor, radians
 from random import *
 import shapely
 import sys
 from time import sleep
+from dataclasses import dataclass
 
-scatter = []
+WORLD = None
+NB_SAMPLES = 200
+NB_BEST_CANDIDATES = 20
+NB_LIDAR_RAY = 4
 
 
-class ParticleFiltering:
+@dataclass
+class World:
     def __init__(self):
-        self.H = 1.18  # width of arena
-        self.W = 1.94  # height of arena
+        self.H = 1.18  # width of arena in meters
+        self.W = 1.94  # height of arena in meters
+        self.top_border    =  self.H/2 # 0.59
+        self.bottom_border = -self.H/2 
+        self.right_border  =  self.W/2 # 0.97
+        self.left_border   = -self.W/2
+        self.rectangle = LinearRing([( self.W/2,  self.H/2),
+                               (-self.W/2,  self.H/2),
+                               (-self.W/2, -self.H/2),
+                               ( self.W/2, -self.H/2)])
 
-        # the world is a rectangular arena with width W and height H
-        self.world = LinearRing(
-            [(self.W/2, self.H/2), (-self.W/2, self.H/2), (-self.W/2, -self.H/2), (self.W/2, -self.H/2)])
-
-        self.nb_samples = 200
-        self.nb_candidates = 20
-        self.scan_data = [0]*360
-
-        # Create nb_samples samples
-        self.samples = [[uniform(-.96, .96), uniform(-0.58, .58), randint(0, 360)]
-                        for _ in range(0, self.nb_samples)]
-
-        # [plt.scatter(i[0], i[1]) for i in self.samples]
-        # plt.xlim(-.98, .98)
-        # plt.ylim(-.60, .60)
-        # plt.show()
-
-        self.best_candidates = self.get_best_candidates(self.samples)
-        # [(plt.scatter(be[1][0], be[1][1], c='b')) for be in best_candidates]
-        scatter.append(self.best_candidates)
-
-        self.x = 0.0
-        self.y = 0.0
-        self.angle = 0
-        self.position = (0, 0, 0)
-
-    #     # Setup the RPLidar
-    #     PORT_NAME = '/dev/ttyUSB0'
-    #     self.lidar = RPLidar(None, PORT_NAME)
-
-    #     print('start lidar scan thread')
-    #     self.scanner_thread = threading.Thread(target=self.lidarScan)
-    #     self.scanner_thread.daemon = True
-    #     self.scanner_thread.start()
-
-    # def lidarScan(self):
-    #     print("Starting background lidar scanning")
-    #     for scan in self.lidar.iter_scans():
-    #         for (_, angle, distance) in scan:
-    #             self.scan_data[min([359, floor(angle)])] = distance
-
-    def set_xya(self, x, y, a):
-        self.x = x
-        self.y = y
-        self.angle = a
-
-    # return the average position of the robot on the map
-    def avg_xya(self, os):
-        return (mean([x[1][0] for x in os]), mean([x[1][1]
-                                                   for x in os]), mean([x[1][2] for x in os]))
-
-    # Fitness function
-    def calculate_distance(self, a, b):
-        return sum(abs(subtract(a, b)))
-        # return sum(abs(array([a**2 if a < 0.02 and a > -0.02 else a for a in subtract(a, b)])))
-
-    # Return world intersection with a ray
     def return_inter(self, alpha, x, y):
-        ray = LineString(
-            [(x, y), (x+cos(alpha)*2*self.W, (y+sin(alpha)*2*self.H))])
-        s = self.world.intersection(ray)
+        ''' Return world intersection with a ray'''
+        # print("coor", alpha, x, y)
+        a = radians(alpha)
+        dest_x =  x + cos(a) * 2*self.W
+        dest_y =  y + sin(a) * 2*self.H
+        line = [(x, y), (dest_x, dest_y)]
+        ray = LineString(line)
+        # print("ray", ray)
+        s = self.rectangle.intersection(ray)
+        # print("s", s)
         return sqrt((s.x-x)**2+(s.y-y)**2)
 
-    # Get the lidar values for simulated samples
-    def get_simulated_lidar_values(self, x):
-        # shift of alpha so that both the robot and the simulation look in the same direction
-        # ? - or + shift
-        return [self.return_inter((x[2] + (alpha * 36)) % 360, x[0], x[1]) for alpha in range(0, 10)]
+WORLD = World()
+  
+@dataclass
+class Robot:
+    angle   :float
+    x       :float
+    y       :float
 
-    # Return the values thymio lidar sensor
-    def get_lidar_values(self):
-        return self.get_simulated_lidar_values((.25, .25, 90))
-        # return [self.scan_data[x] / 1000 for x in list(range(0, 360, 36))]
+    def get_simulated_lidar_values(self, world=WORLD, nb_ray=NB_LIDAR_RAY):
+        ''' Get the lidar values for simulated samples'''
+        rays = []
+        for alpha in range(0, 360, 360//nb_ray):
+            lid_angle = (self.angle + alpha) % 360
+            ray = world.return_inter(lid_angle, self.x, self.y)
+            rays.append(ray)
+        return rays
 
-    # Return the nb_candidates best candidates
-    def get_best_candidates(self, samples):
-            # Contains a list of nb_samples lidar simlutation (each with 10 rays)
-        lr_samples = [(self.get_simulated_lidar_values(x), x) for x in samples]
+    def which_corner(self) -> str:
+        ''' in which corner of the map is located the robot'''
+        corner = ''
+        if self.y > 0:
+            corner += 'top_'
+        else:
+            corner += 'bottom_'
+        if self.x > 0:
+            corner += 'right'
+        else:
+            corner += 'left'
+        return corner
 
-        DISTrr = self.get_lidar_values()
+    def is_in_corner(self, corner: str) -> bool:
+        '''is the robot in the given corner of the map'''
+        return corner == self.which_corner()
 
-        candidates = [((self.calculate_distance(DISTrr, sample[0]), sample[1]))
-                      for sample in lr_samples]
+    def __repr__(self):
+        return ("({}, {}, {})".format(
+                                round(self.x, 2),
+                                round(self.y, 2),
+                                self.angle))
 
-        # # sort by second index
-        candidates.sort(key=lambda candidates: candidates[0])
 
-        return candidates[: self.nb_candidates]
+def lidar_fitness(real_values: list, simulated_values: list) -> float:
+    '''Fitness showing how close are the simulated lidar values
+    to the real lidar values. Lower is better ( closer )
+    '''
+    return sum(abs(subtract(real_values, simulated_values)))
 
-    def Localize(self):
-        while True:
 
-            # Move and Resample
-            re_candidates = []
-            for b in self.best_candidates:
-                b[1][0] += self.x
-                b[1][1] += self.y
-                b[1][2] += self.angle
-                # ? reset to zero as it should only be done once?
-                # self.set_xya(0, 0, 0)
-                # Creates nb_candidates new subsample for each best candidate
-                for _ in range(0, self.nb_candidates):
-                    # Resample around a 1 centimer wide box.
-                    x = b[1][0] + uniform(-0.03, 0.03)
-                    y = b[1][1] + uniform(-0.03, 0.03)
-                    a = (b[1][2] + randint(-10, 10)) % 360
+def create_random_sample(size=NB_SAMPLES, world=WORLD) -> list:
+    candidates = []
+    for _ in range(size):
+        c = Robot(angle=randint(0, 360),
+                  x=uniform(world.left_border, world.right_border),
+                  y=uniform(world.bottom_border, world.top_border))
+        candidates.append(c)
+    return candidates
 
-                    # Keeps the resampling in the arena
-                    if x > .96:
-                        x = .96
-                    elif x < -.96:
-                        x = -.96
 
-                    if y > .58:
-                        y = .58
-                    elif y < -.58:
-                        y = -.58
+def get_best_candidates(samples,
+                        real_robot,
+                        nb_best_candidates=NB_BEST_CANDIDATES):
+    '''
+    Return the best candidates from a list of virtual robots positions
+    compared to the real robot lidar values.
+    '''
+    candidates = []
+    rrl = real_robot.get_simulated_lidar_values()
+    for virtual_robot in samples:
+        vrl = virtual_robot.get_simulated_lidar_values()
+        fit = lidar_fitness(rrl, vrl)
+        candidates.append((virtual_robot, fit))
 
-                    re_candidates.append([x, y, a])
+    candidates.sort(key=lambda candidates: candidates[1])
+    only_robots = [c[0] for c in candidates]
+    return only_robots[: nb_best_candidates]
 
-            self.best_candidates = self.get_best_candidates(re_candidates)
-            self.position = self.avg_xya(self.best_candidates)
-            scatter.append(self.best_candidates)
+
+def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
+    '''
+    create `size` new virtual robots located around the given robot 
+    '''
+    pos_delta      = 0.03
+    angle_delta    = 10
+    new_candidates = []
+    for _ in range(size):
+        x = robot.x + uniform(-pos_delta, pos_delta)
+        y = robot.y + uniform(-pos_delta, pos_delta)
+        a = (robot.angle + randint(-angle_delta, angle_delta)) % 360
+
+        # Keeps the resampling inside the arena
+        if x > world.right_border:
+            x = world.right_border - 0.01
+        elif x < world.left_border:
+            x = world.left_border + 0.01
+
+        if y > world.top_border:
+            y = world.top_border - 0.01
+        elif y < world.bottom_border:
+            y = world.bottom_border + 0.01
+
+        new_candidates.append(Robot(angle=a, x=x, y=y))
+    return new_candidates
 
 
 if __name__ == '__main__':
-    pf = ParticleFiltering()
+    WORLD = World()
+    time_to_localise = 10
 
-    print('start particle filtering thread')
-    thread = Thread(target=pf.Localize)
-    thread.daemon = True
-    thread.start()
-    # pf.set_xya(0, 0, 90)
+    real_robot = Robot(x=.8, y=-0.23, angle=57)
+    # real_robot = Robot(angle=0, x=0, y=0)
+    sample = create_random_sample()
     try:
         while True:
-            sleep(.1)
-            if len(scatter) > 10:
-                for s in scatter:
-                    [plt.scatter(i[1][0], i[1][1]) for i in s]
-                    plt.xlim(-.98, .98)
-                    plt.ylim(-.60, .60)
-                    plt.show()
-            # [plt.scatter(i[1][0], i[1][1]) for i in pf.best_candidates]
-            # plt.xlim(-.98, .98)
-            # plt.ylim(-.60, .60)
-            # plt.show()
-            print(pf.position)
+            raw = input('continue')
+            if len(raw) > 0:
+                xy = [ float(x) for x in raw.split(',') ]
+                print(xy)
+                real_robot.x += xy[0]
+                real_robot.y += xy[1]
+            for _ in range(time_to_localise):
+                best_candidates = get_best_candidates(sample, real_robot)
+                # print("best_candidates", best_candidates)
+                print("best", best_candidates[0])
+                # print(best_candidates[0].which_corner())
+                # print(set([b.which_corner() for b in best_candidates]))
+                new_candidates = []
+                for virtual_robot in best_candidates:
+                    cs = resample_around(virtual_robot)
+                    new_candidates.extend(cs)
+                sample = new_candidates
+             
+                # sleep(0.1)
 
     except KeyboardInterrupt:
         sys.exit()
 
-    # TODO use the color sensor afterward
