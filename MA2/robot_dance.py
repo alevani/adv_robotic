@@ -7,11 +7,10 @@ from time import sleep
 from mtcarlo import *
 from time import time
 from utils import *
-from lidar import Lidar
-
 import threading
 import dbus
 import os
+from Lidar import *
 
 #! close unused thread?
 
@@ -48,7 +47,6 @@ class Thymio:
 
         print('Start sensing thread')
         self.threadSense = Thread(target=self.sense)
-        self.threadSense.daemon = True
         self.threadSense.start()
 
         print("Start communication")
@@ -63,6 +61,8 @@ class Thymio:
 
         self.markers = [(.98, -.60), (.98, .60), (-.98, .60), (-.98, -.60)]
         self.aseba = self.asebaNetwork
+
+        self.benchwarm()
 
     def setup(self):
         return self.asebaNetwork
@@ -118,23 +118,26 @@ class Thymio:
         self.aseba.SendEventName("motor.target", [left_wheel, right_wheel])
 
     def benchwarm(self):
+        print("Benchwarm..")
         while self.confidence <= 10:
             if(self.rx > 2):
                 self.dance(self.rx)
         self.wander()
 
     def mate(self):
+        print("Mate process started.")
         while not self.hasPartner:
             sleep(0.1)
             if self.rx < 3 and not self.gender:
+                print("Partner found, sending dancefloor information")
                 danceFloor = randint(3, 6)
                 for _ in range(5):
                     self.sendInformation(danceFloor)
                 self.hasPartner = True
 
     def wander(self):
+        print("Enough confidence, now wandering.")
         self.thread = Thread(target=self.mate)
-        self.thread.daemon = True
         self.thread.start()
         while not self.hasPartner:
             for marker in self.markers:
@@ -156,6 +159,8 @@ class Thymio:
 
     def goto(self, x, y):
         pos = self.particleFilter.position
+        # ! -> to change, surly it's gonna crash
+        print("From ", pos, " go to ", str(x), " ", str(y))
         rotation = caculate_angle_to_dest(pos[2], pos[1], pos[0], x, y)
 
         # TODO add +-5/10 angle degree
@@ -169,6 +174,7 @@ class Thymio:
             self.forward()
 
     def dance(self, df):
+        print("Dance floor ", str(df), " received, dance.")
         self.hasPartner = False
         goto(self.dancefloor[df-3])
         # dance

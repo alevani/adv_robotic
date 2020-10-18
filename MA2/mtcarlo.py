@@ -1,8 +1,5 @@
 from shapely.geometry import LinearRing, LineString, Point, Polygon
 from numpy import sin, cos, pi, sqrt, subtract, std, mean, array
-# from adafruit_rplidar import RPLidar
-import threading
-from threading import Thread
 import matplotlib.pyplot as plt
 from math import floor, radians
 from random import *
@@ -11,7 +8,7 @@ import sys
 from time import sleep
 from dataclasses import dataclass
 
-WORLD = None # gonna be defined after World
+WORLD = None  # gonna be defined after World
 NB_SAMPLES = 200
 NB_BEST_CANDIDATES = 20
 NB_LIDAR_RAY = 4
@@ -21,21 +18,21 @@ class World:
     def __init__(self):
         self.H = 1.18  # width of arena in meters
         self.W = 1.94  # height of arena in meters
-        self.top_border    =  self.H/2 # 0.59
-        self.bottom_border = -self.H/2 
-        self.right_border  =  self.W/2 # 0.97
-        self.left_border   = -self.W/2
-        self.rectangle = LinearRing([( self.W/2,  self.H/2),
-                               (-self.W/2,  self.H/2),
-                               (-self.W/2, -self.H/2),
-                               ( self.W/2, -self.H/2)])
+        self.top_border = self.H/2  # 0.59
+        self.bottom_border = -self.H/2
+        self.right_border = self.W/2  # 0.97
+        self.left_border = -self.W/2
+        self.rectangle = LinearRing([(self.W/2,  self.H/2),
+                                     (-self.W/2,  self.H/2),
+                                     (-self.W/2, -self.H/2),
+                                     (self.W/2, -self.H/2)])
 
     def return_inter(self, alpha, x, y):
         ''' Return world intersection with a ray'''
         # print("coor", alpha, x, y)
         a = radians(alpha)
-        dest_x =  x + cos(a) * 2*self.W
-        dest_y =  y + sin(a) * 2*self.H
+        dest_x = x + cos(a) * 2*self.W
+        dest_y = y + sin(a) * 2*self.H
         line = [(x, y), (dest_x, dest_y)]
         ray = LineString(line)
         # print("ray", ray)
@@ -43,13 +40,15 @@ class World:
         # print("s", s)
         return sqrt((s.x-x)**2+(s.y-y)**2)
 
+
 WORLD = World()
-  
+
+
 @dataclass
 class Robot:
-    angle   :float
-    x       :float
-    y       :float
+    angle: float
+    x: float
+    y: float
 
     def get_simulated_lidar_values(self, world=WORLD, nb_ray=NB_LIDAR_RAY):
         ''' Get the lidar values for simulated samples'''
@@ -61,8 +60,8 @@ class Robot:
         return rays
 
     def move(self, dx, dy, da):
-        self.x     += dx
-        self.y     += dy
+        self.x += dx
+        self.y += dy
         self.angle += da
 
     def which_corner(self) -> str:
@@ -84,9 +83,9 @@ class Robot:
 
     def __repr__(self):
         return ("({}, {}, {})".format(
-                                round(self.x, 2),
-                                round(self.y, 2),
-                                self.angle))
+            round(self.x, 2),
+            round(self.y, 2),
+            self.angle))
 
 
 def lidar_fitness(real_values: list, simulated_values: list) -> float:
@@ -128,8 +127,8 @@ def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
     '''
     create `size` new virtual robots located around the given robot 
     '''
-    pos_delta      = 0.03
-    angle_delta    = 10
+    pos_delta = 0.03
+    angle_delta = 10
     new_candidates = []
     for _ in range(size):
         x = robot.x + uniform(-pos_delta, pos_delta)
@@ -151,12 +150,10 @@ def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
     return new_candidates
 
 
-
 class ParticleFiltering:
     def __init__(self, real_lidar):
         self.position = None
         self.real_lidar = real_lidar
-
 
     def set_position(self, robot):
         self.position = robot
@@ -168,7 +165,8 @@ class ParticleFiltering:
             while True:
                 for _ in range(convergence_iteration):
                     real_robot_lidar = self.lidar.get_scan_data()
-                    best_candidates = get_best_candidates(sample, real_robot_lidar)
+                    best_candidates = get_best_candidates(
+                        sample, real_robot_lidar)
                     self.set_position(best_candidates[0])
                     new_candidates = []
                     for virtual_robot in best_candidates:
@@ -197,7 +195,8 @@ if __name__ == '__main__':
                 real_robot.x += xy[0]
                 real_robot.y += xy[1]
             for _ in range(convergence_iteration):
-                real_robot_lidar = real_robot.get_simulated_lidar_values() # change for real lidar value
+                # change for real lidar value
+                real_robot_lidar = real_robot.get_simulated_lidar_values()
                 best_candidates = get_best_candidates(sample, real_robot_lidar)
                 # print("best_candidates", best_candidates)
                 print("best", best_candidates[0])
@@ -208,9 +207,8 @@ if __name__ == '__main__':
                     cs = resample_around(virtual_robot)
                     new_candidates.extend(cs)
                 sample = new_candidates
-             
+
                 # sleep(0.1)
 
     except KeyboardInterrupt:
         sys.exit()
-
