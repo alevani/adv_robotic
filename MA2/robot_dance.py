@@ -26,6 +26,7 @@ class Thymio:
         bus = dbus.SessionBus()
         self.asebaNetworkObject = bus.get_object("ch.epfl.mobots.Aseba", "/")
 
+        self.pf = particle_filter
         print("[ASEBA] Network object init..")
         self.asebaNetwork = dbus.Interface(
             self.asebaNetworkObject, dbus_interface="ch.epfl.mobots.AsebaNetwork"
