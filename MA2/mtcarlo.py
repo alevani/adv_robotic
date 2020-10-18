@@ -11,7 +11,7 @@ import sys
 from time import sleep
 from dataclasses import dataclass
 
-WORLD = None
+WORLD = None # gonna be defined after World
 NB_SAMPLES = 200
 NB_BEST_CANDIDATES = 20
 NB_LIDAR_RAY = 4
@@ -59,6 +59,11 @@ class Robot:
             ray = world.return_inter(lid_angle, self.x, self.y)
             rays.append(ray)
         return rays
+
+    def move(self, dx, dy, da):
+        self.x     += dx
+        self.y     += dy
+        self.angle += da
 
     def which_corner(self) -> str:
         ''' in which corner of the map is located the robot'''
@@ -146,10 +151,39 @@ def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
     return new_candidates
 
 
+
+class ParticleFiltering:
+    def __init__(self, real_lidar):
+        self.position = None
+        self.real_lidar = real_lidar
+
+
+    def set_position(self, robot):
+        self.position = robot
+
+    def localise(self):
+        convergence_iteration = 10
+        sample = create_random_sample()
+        try:
+            while True:
+                for _ in range(convergence_iteration):
+                    real_robot_lidar = self.lidar.get_scan_data()
+                    best_candidates = get_best_candidates(sample, real_robot_lidar)
+                    self.set_position(best_candidates[0])
+                    new_candidates = []
+                    for virtual_robot in best_candidates:
+                        cs = resample_around(virtual_robot)
+                        new_candidates.extend(cs)
+                    sample = new_candidates
+
+        except KeyboardInterrupt:
+            sys.exit()
+
+
 if __name__ == '__main__':
     WORLD = World()
-    convergence_iteration = 10
 
+    convergence_iteration = 10
     real_robot = Robot(x=.8, y=-0.23, angle=57)
     # real_robot = Robot(angle=0, x=0, y=0)
     sample = create_random_sample()
@@ -163,7 +197,7 @@ if __name__ == '__main__':
                 real_robot.x += xy[0]
                 real_robot.y += xy[1]
             for _ in range(convergence_iteration):
-                real_robot_lidar = real_robot.get_simulated_lidar_values()
+                real_robot_lidar = real_robot.get_simulated_lidar_values() # change for real lidar value
                 best_candidates = get_best_candidates(sample, real_robot_lidar)
                 # print("best_candidates", best_candidates)
                 print("best", best_candidates[0])

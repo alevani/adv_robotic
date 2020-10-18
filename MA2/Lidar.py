@@ -1,5 +1,6 @@
 from adafruit_rplidar import RPLidar
 import threading
+from math import floor
 
 NB_STOP = 10
 

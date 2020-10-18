@@ -7,6 +7,8 @@ from time import sleep
 from mtcarlo import *
 from time import time
 from utils import *
+from lidar import Lidar
+
 import threading
 import dbus
 import os
@@ -189,7 +191,10 @@ class Thymio:
 if __name__ == '__main__':
     rest = False
     try:
-        robot = Thymio()
+        lidar = Lidar()
+        pf = ParticleFiltering(lidar)
+        robot = Thymio(pf)
+
     except KeyboardInterrupt:
         print("Stopping robot")
         exit_now = True
