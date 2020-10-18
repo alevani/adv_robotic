@@ -216,6 +216,8 @@ class Thymio:
 
     def dance(self, df):
         log.robot("Yaaah, let's go dance to ", df, "!")
+
+        #! Has to set it to false
         self.hasPartner = False
         goto(self.dancefloor[df-3])
         # dance
@@ -234,6 +236,14 @@ if __name__ == '__main__':
         lidar = Lidar()
         pf = ParticleFiltering(lidar)
         robot = Thymio(pf)
+
+        # # Benchwarm
+        # log.warn("Benchwarm..")
+        # while robot.confidence <= 10:
+        #     comm_value = robot.rx
+        #     if(comm_value > 2):
+        #         robot.dance(comm_value)
+        # self.wander()
 
     except KeyboardInterrupt:
         log.error("Keyboard interrupt")
