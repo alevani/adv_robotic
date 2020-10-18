@@ -11,6 +11,7 @@ import threading
 import dbus
 import os
 from Lidar import *
+from log import Logger
 
 #! close unused thread?
 
@@ -18,6 +19,8 @@ os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
 
 ERROR_ANGLE = 2
 ERROR_DISTANCE = 3
+
+log = Logger()
 
 
 @dataclass
@@ -28,38 +31,39 @@ class Position:
 
 class Thymio:
     def __init__(self, particle_filter):
-        print("Thymio init...")
 
-        print("[ASEBA] bus init..")
+        log.warn("Initialisation")
+        log.warn("[ASEBA] bus initialisation..")
+
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         bus = dbus.SessionBus()
         self.asebaNetworkObject = bus.get_object("ch.epfl.mobots.Aseba", "/")
 
         self.pf = particle_filter
-        print("[ASEBA] Network object init..")
+        log.aseba("Network object init..")
         self.asebaNetwork = dbus.Interface(
             self.asebaNetworkObject, dbus_interface="ch.epfl.mobots.AsebaNetwork"
         )
 
-        print("[ASEBA] Load file")
+        log.aseba("[ASEBA] Load file")
         self.asebaNetwork.LoadScripts(
             "thympi.aesl", reply_handler=self.dbusError, error_handler=self.dbusError
         )
 
-        print("Gender attribution")
+        log.warn("Gender attribution")
         self.gender = randint(1, 2)
         # self.asebaNetwork.SendEventName(
         #     "led.top", (255, 0, 0) if self.gender else (0, 0, 255))
 
-        print("Start Growing confidence...")
+        log.warn("Start Growing confidence...")
         self.confidence = 0
         self.growConfidence()
 
-        print('Start sensing thread')
+        log.warn('Start sensing thread')
         self.threadSense = Thread(target=self.sense)
         self.threadSense.start()
 
-        print("Start communication")
+        log.warn("Start communication")
         self.startCommunication()
         self.sendInformation()
         self.receiveInformation()
@@ -82,7 +86,7 @@ class Thymio:
         os.system("pkill -n asebamedulla")
 
     def dbusError(self, e):
-        print("dbus error: %s" % str(e))
+        log.error("dbus error: %s" % str(e))
 
     # Periodically increase confidence
     def growConfidence(self):
@@ -129,25 +133,28 @@ class Thymio:
         self.aseba.SendEventName("motor.target", [left_wheel, right_wheel])
 
     def benchwarm(self):
-        print("Benchwarm..")
+        log.warn("Benchwarm..")
         while self.confidence <= 10:
             if(self.rx > 2):
                 self.dance(self.rx)
         self.wander()
 
     def mate(self):
-        print("Mate process started.")
+        log.warn("Mate process started.")
         while not self.hasPartner:
             sleep(0.1)
             if self.rx < 3 and not self.gender:
-                print("Partner found, sending dancefloor information")
+                log.warn("Partner found")
+                log.robot("T'as de beaux yeux tu sais")
+                log.robot("*Pokemon battle music intensifies*")
                 danceFloor = randint(3, 6)
                 for _ in range(5):
                     self.sendInformation(danceFloor)
+                log.warn("Dance floor sent to partner (5x)")
                 self.hasPartner = True
 
     def wander(self):
-        print("Enough confidence, now wandering.")
+        log.warn("Enough confidence, now wandering.")
         self.thread = Thread(target=self.mate)
         self.thread.start()
         while not self.hasPartner:
@@ -182,8 +189,8 @@ class Thymio:
     def goto(self, position):
         robot = self.pf.position
 
-        print("From ", robot.x, robot.y, robot.angle,
-              " go to ", position.x, " ", position.y)
+        log.warn("From ", robot.x, robot.y, robot.angle,
+                 " go to ", position.x, " ", position.y)
 
         rotation = caculate_angle_to_dest(
             robot.x, robot.y, robot.angle, position.x, position.y)
@@ -195,13 +202,14 @@ class Thymio:
             self.forward()
 
     def dance(self, df):
-        print("Dance floor ", str(df), " received, dance.")
+        log.robot("Yaaah, let's go dance to ", df, "!")
         self.hasPartner = False
         goto(self.dancefloor[df-3])
         # dance
         self.rest()
 
     def rest(self):
+        log.robot("Whoo, I am exhausted, I will rest for now.")
         # goes to the wall and remain still
         pass
 
@@ -214,8 +222,8 @@ if __name__ == '__main__':
         robot = Thymio(pf)
 
     except KeyboardInterrupt:
-        print("Stopping robot")
+        log.error("Stopping robot")
         exit_now = True
         sleep(1)
         os.system("pkill -n asebamedulla")
-        print("asebamodulla killed")
+        log.error("asebamodulla killed")
