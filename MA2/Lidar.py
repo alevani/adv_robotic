@@ -34,4 +34,3 @@ class FakeLidar:
 
     def get_scan_data(self):
         return self.fake_robot.get_simulated_lidar_values()
-
