@@ -159,9 +159,12 @@ class Thymio:
     def rotate(self):
         step = 1
         self.aseba.SendEventName("motor.target", [-200, 200])
-        sleep(.015)  # ! depends on how much speeds and time it needs to rotate 1 degree + IT HAS TO MOVE ON A SPECIFIC SIDE, IT DEPENDS ON HOW WE CALULCATE THE ANGLE
+        # ! IT HAS TO MOVE ON A SPECIFIC SIDE, IT DEPENDS ON HOW WE CALULCATE THE ANGLE
+        sleep(.015)
         self.stop()
         self.pf.set_delta(0, 0, step)
+        log.robot("Rotating one degree to the left")
+        log.warn("Current approximated position: ", self.pf.position)
 
     def forward(self):
         dist = 1  # cm
@@ -189,6 +192,8 @@ class Thymio:
 
         rotation = caculate_angle_to_dest(
             robot.x, robot.y, robot.angle, position.x, position.y)
+
+        log.warn("Angle to be aligned with objective: ", rotation)
 
         while not self.is_close_to_angle(robot, rotation) and not self.hasPartner and not self.is_there_an_obstacle_ahead():
             self.rotate()
