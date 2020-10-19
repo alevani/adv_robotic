@@ -184,7 +184,6 @@ class ParticleFiltering:
 
                 sample = self.move_sample(sample)
                 real_robot_lidar = self.real_lidar.get_scan_data()
-
                 for _ in range(convergence_iteration):
                     best_candidates = get_best_candidates(
                         sample, real_robot_lidar)
@@ -202,9 +201,16 @@ class ParticleFiltering:
 
 if __name__ == '__main__':
     from Lidar import FakeLidar
+    import threading
     fake_lidar = FakeLidar(Robot(x=0.30, y=0.50, angle=35))
     pf = ParticleFiltering(fake_lidar)
-    pf.localise()
+    # pf.localise()
+    scanner_thread = threading.Thread(target=pf.localise)
+    scanner_thread.start()
+    while True:
+        cmd = input('command')
+        if cmd == 'print'
+
 
 
 
