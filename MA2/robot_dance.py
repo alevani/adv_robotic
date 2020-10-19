@@ -4,14 +4,14 @@ from random import randint
 import dbus.mainloop.glib
 from numpy import arctan
 from time import sleep
+from log import Logger
 from mtcarlo import *
 from time import time
 from utils import *
+from Lidar import *
 import threading
 import dbus
 import os
-from Lidar import *
-from log import Logger
 
 #! close unused thread?
 
@@ -158,7 +158,8 @@ class Thymio:
                     log.robot("*Pokemon battle music intensifies*")
                     danceFloor = randint(3, 6)
                     for _ in range(5):
-                        self.sendInformation(danceFloor)
+                        self.asebaNetwork.SendEventName(
+                            "prox.comm.tx", [danceFloor])
                     log.warn("Dance floor sent to partner (5x)")
                     self.set_color(PURPLE)
                     self.hasPartner = True
