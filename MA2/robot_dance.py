@@ -19,9 +19,11 @@ os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
 
 ERROR_ANGLE = 2
 ERROR_DISTANCE = 3
+
 PURPLE = [(255, 0, 255)]
 RED = [(255, 0, 0)]
 BLUE = [(0, 0, 255)]
+WHITE = [(255, 255, 255)]
 
 log = Logger()
 
@@ -221,7 +223,7 @@ class Thymio:
     def dance(self, df):
         log.robot("Yaaah, let's go dance to ", df, "!")
 
-        #! Has to set it to false
+        #! Has to set it to false, don't remove
         self.hasPartner = False
         goto(self.dancefloor[df-3])
         # dance
@@ -229,9 +231,9 @@ class Thymio:
 
     def rest(self):
         log.robot("Whoo, I am exhausted, I will rest for now.")
-        # goes to the wall and remain still
+        self.goto(self.markers[0])
+        self.set_color(WHITE)
         self.stop()
-        pass
 
 
 if __name__ == '__main__':
@@ -242,14 +244,6 @@ if __name__ == '__main__':
         log.warn("Setting up ParticleFiltering")
         pf = ParticleFiltering(lidar)
         robot = Thymio(pf)
-
-        # # Benchwarm
-        # log.warn("Benchwarm..")
-        # while robot.confidence <= 10:
-        #     comm_value = robot.rx
-        #     if(comm_value > 2):
-        #         robot.dance(comm_value)
-        # self.wander()
 
     except KeyboardInterrupt:
         log.error("Keyboard interrupt")
