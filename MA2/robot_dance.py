@@ -18,7 +18,7 @@ import os
 os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
 
 ERROR_ANGLE = 2
-ERROR_DISTANCE = 3
+ERROR_DISTANCE = 30
 
 PURPLE = [255, 0, 255]
 RED = [255, 0, 0]
@@ -159,18 +159,18 @@ class Thymio:
     def rotate(self):
         step = 1
         self.aseba.SendEventName("motor.target", [-200, 200])
-        sleep(1)  # ! depends on how much speeds and time it needs to rotate 1 degree + IT HAS TO MOVE ON A SPECIFIC SIDE, IT DEPENDS ON HOW WE CALULCATE THE ANGLE
+        sleep(.015)  # ! depends on how much speeds and time it needs to rotate 1 degree + IT HAS TO MOVE ON A SPECIFIC SIDE, IT DEPENDS ON HOW WE CALULCATE THE ANGLE
         self.stop()
-        # TODO move robot physically from 1 degree
         self.pf.set_delta(0, 0, step)
 
     def forward(self):
-        # TODO forward physically from 1 centimeter
-        self.aseba.SendEventName("motor.target", [200, 200])
-        sleep(1)  # ! depends on how much speeds and time it needs to move 1cm
+        dist = 1  # cm
+        time = dist * .125
+        self.drive(200, 200)
+        sleep(time)
         self.stop()
-        step = 0.01
 
+        step = 0.01
         #! is that correct?
         dx, dy = polarToCart(step, robot.angle)
         self.pf.set_delta(dx, dy,  0)
@@ -253,6 +253,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         log.error("Keyboard interrupt")
         log.error("Stopping robot")
+        robot.stop()
         exit_now = True
         sleep(1)
         os.system("pkill -n asebamedulla")
