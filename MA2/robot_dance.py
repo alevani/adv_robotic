@@ -43,6 +43,9 @@ class Thymio:
         self.aseba = n
 
         self.pf = particle_filter
+        self.threadPf = Thread(target=self.pf.localise)
+        self.threadPf.start()
+        sleep(1)  # ! to make sure it converge at least once
 
         log.warn("Start Growing confidence...")
         self.confidence = 0
@@ -64,29 +67,29 @@ class Thymio:
         self.gender = randint(1, 2)
         self.set_color(RED if self.gender else BLUE)
 
-        log.warn("Start communication")
-        self.startCommunication()
-        self.sendInformation()
-        self.receiveInformation()
-
+        # log.warn("Start communication")
+        # self.startCommunication()
+        # self.sendInformation()
+        # self.receiveInformation()
+        self.rx = -1
         self.benchwarm()
 
     def set_color(self, color):
-        self.aseba.SendEventName("led.top", color)
+        # self.aseba.SendEventName("led.top", color)
+        pass
 
     def stopAsebamedulla(self):
         os.system("pkill -n asebamedulla")
 
     # Periodically increase confidence
     def growConfidence(self):
-        self.confidence += 1
+        self.confidence += 10  # ! to reduce
         threading.Timer(2, self.growConfidence).start()
 
     def resetConfidence(self):
         self.confidence = 0
 
     def startCommunication(self):
-        self.aseba.SendEventName("prox.comm.enable", [1])
         self.aseba.SendEventName("prox.comm.rx", [0])
 
     # ? Remeber to change tx number when finding a partner -> wuat?
@@ -155,8 +158,8 @@ class Thymio:
 
     def rotate(self):
         step = 1
-        self.aseba.SendEventName("motor.target", [200, 200])
-        sleep(10)  # ! depends on how much speeds and time it needs to rotate 1 degree + IT HAS TO MOVE ON A SPECIFIC SIDE, IT DEPENDS ON HOW WE CALULCATE THE ANGLE
+        self.aseba.SendEventName("motor.target", [-200, 200])
+        sleep(1)  # ! depends on how much speeds and time it needs to rotate 1 degree + IT HAS TO MOVE ON A SPECIFIC SIDE, IT DEPENDS ON HOW WE CALULCATE THE ANGLE
         self.stop()
         # TODO move robot physically from 1 degree
         self.pf.set_delta(0, 0, step)
@@ -164,7 +167,7 @@ class Thymio:
     def forward(self):
         # TODO forward physically from 1 centimeter
         self.aseba.SendEventName("motor.target", [200, 200])
-        sleep(10)  # ! depends on how much speeds and time it needs to move 1cm
+        sleep(1)  # ! depends on how much speeds and time it needs to move 1cm
         self.stop()
         step = 0.01
 
@@ -181,8 +184,8 @@ class Thymio:
     def goto(self, position):
         robot = self.pf.position
 
-        log.warn("From ", robot.x, robot.y, robot.angle,
-                 " go to ", position.x, " ", position.y)
+        log.warn(("From ", robot.x, robot.y, robot.angle,
+                  " go to ", position.x, " ", position.y))
 
         rotation = caculate_angle_to_dest(
             robot.x, robot.y, robot.angle, position.x, position.y)
@@ -237,6 +240,8 @@ if __name__ == '__main__':
     asebaNetwork.LoadScripts(
         "thympi.aesl", reply_handler=dbusError, error_handler=dbusError
     )
+
+    sleep(5)
 
     try:
         log.warn("Setting up lidar")

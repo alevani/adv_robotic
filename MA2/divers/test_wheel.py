@@ -43,6 +43,7 @@ class Thymio:
         )
 
         # scanning_thread = Process(target=robot.drive, args=(200,200,))
+        sleep(10)
         return asebaNetwork
 
     def stopAsebamedulla(self):
@@ -70,7 +71,7 @@ if __name__ == '__main__':
         # Test for 1cm angle
         robot = Thymio()
         robot.drive(-200, 200)
-        sleep(2)
+        sleep(1)
         robot.stop()
     except KeyboardInterrupt:
         print("Stopping robot")

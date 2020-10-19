@@ -10,7 +10,7 @@ class Lidar:
     def __init__(self, nb_stop=NB_STOP):
         self.log = Logger()
         self.nb_stop = nb_stop
-        self.nb_samples = 360 / nb_stop
+        self.nb_samples = int(360 / nb_stop)
 
         PORT_NAME = '/dev/ttyUSB0'
         self.lidar = RPLidar(None, PORT_NAME)
@@ -18,6 +18,7 @@ class Lidar:
         self.log.warn('start lidar scan thread')
         self.scanner_thread = threading.Thread(target=self.lidarScan)
         self.scanner_thread.start()
+        self.scan_data = [0]*360
 
     def lidarScan(self):
         self.log.warn("Starting background lidar scanning")
