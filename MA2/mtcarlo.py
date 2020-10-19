@@ -186,6 +186,7 @@ class ParticleFiltering:
         self.aseba.SendEventName("motor.target", [left_wheel, right_wheel])
 
     def calibrate(self):
+        #! Do aseba init somewhere, but it's already being done in robot_dance so maybe to times might crash the whole thing.
         colorOrder = []
         self.stop()
 

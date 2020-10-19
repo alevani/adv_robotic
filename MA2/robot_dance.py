@@ -19,6 +19,9 @@ os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
 
 ERROR_ANGLE = 2
 ERROR_DISTANCE = 3
+PURPLE = [(255, 0, 255)]
+RED = [(255, 0, 0)]
+BLUE = [(0, 0, 255)]
 
 log = Logger()
 
@@ -39,7 +42,6 @@ class Thymio:
         bus = dbus.SessionBus()
         self.asebaNetworkObject = bus.get_object("ch.epfl.mobots.Aseba", "/")
 
-        self.pf = particle_filter
         log.aseba("Network object init..")
         self.asebaNetwork = dbus.Interface(
             self.asebaNetworkObject, dbus_interface="ch.epfl.mobots.AsebaNetwork"
@@ -50,10 +52,11 @@ class Thymio:
             "thympi.aesl", reply_handler=self.dbusError, error_handler=self.dbusError
         )
 
+        self.pf = particle_filter
+
         log.warn("Gender attribution")
         self.gender = randint(1, 2)
-        # self.asebaNetwork.SendEventName(
-        #     "led.top", (255, 0, 0) if self.gender else (0, 0, 255))
+        # self.set_color(RED if self.gender else BLUE)
 
         log.warn("Start Growing confidence...")
         self.confidence = 0
@@ -81,6 +84,9 @@ class Thymio:
         self.aseba = self.asebaNetwork
 
         self.benchwarm()
+
+    def set_color(self, color):
+        self.asebaNetwork.SendEventName("led.top", color)
 
     def setup(self):
         return self.asebaNetwork
@@ -140,6 +146,7 @@ class Thymio:
         log.warn("Benchwarm..")
         while self.confidence <= 10:
             if(self.rx > 2):
+                self.set_color(PURPLE)
                 self.dance(self.rx)
         self.wander()
 
@@ -147,7 +154,7 @@ class Thymio:
         log.warn("Mate process started.")
         while not self.hasPartner:
             sleep(0.1)
-           #! might be very sketchy (the sense  thread)
+           #! might be very sketchy (the sense thread)
             if self.is_there_a_robot_in_front:
                 if self.rx < 3 and not self.gender:
                     log.warn("Partner found")
@@ -157,6 +164,7 @@ class Thymio:
                     for _ in range(5):
                         self.sendInformation(danceFloor)
                     log.warn("Dance floor sent to partner (5x)")
+                    self.set_color(PURPLE)
                     self.hasPartner = True
 
     def wander(self):
