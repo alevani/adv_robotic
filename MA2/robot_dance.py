@@ -20,10 +20,10 @@ os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
 ERROR_ANGLE = 2
 ERROR_DISTANCE = 3
 
-PURPLE = [(255, 0, 255)]
-RED = [(255, 0, 0)]
-BLUE = [(0, 0, 255)]
-WHITE = [(255, 255, 255)]
+PURPLE = [255, 0, 255]
+RED = [255, 0, 0]
+BLUE = [0, 0, 255]
+WHITE = [255, 255, 255]
 
 log = Logger()
 
@@ -44,10 +44,6 @@ class Thymio:
 
         self.pf = particle_filter
 
-        log.warn("Gender attribution")
-        self.gender = randint(1, 2)
-        # self.set_color(RED if self.gender else BLUE)
-
         log.warn("Start Growing confidence...")
         self.confidence = 0
         self.growConfidence()
@@ -56,11 +52,6 @@ class Thymio:
         self.threadSense = Thread(target=self.sense)
         self.threadSense.start()
 
-        log.warn("Start communication")
-        self.startCommunication()
-        self.sendInformation()
-        self.receiveInformation()
-
         self.hasPartner = False
 
         self.dancefloor = [Position(.4, .3), Position(.4, -.3), Position(-.4, .3),
@@ -68,6 +59,15 @@ class Thymio:
 
         self.markers = [Position(.98, -.60), Position(.98, .60),
                         Position(-.98, .60), Position(-.98, -.60)]
+
+        log.warn("Gender attribution")
+        self.gender = randint(1, 2)
+        self.set_color(RED if self.gender else BLUE)
+
+        log.warn("Start communication")
+        self.startCommunication()
+        self.sendInformation()
+        self.receiveInformation()
 
         self.benchwarm()
 
