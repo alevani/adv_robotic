@@ -71,8 +71,6 @@ class Thymio:
         self.sendInformation()
         self.receiveInformation()
 
-        self.is_there_a_robot_in_front = False
-
         self.hasPartner = False
 
         self.dancefloor = [Position(.4, .3), Position(.4, -.3), Position(-.4, .3),
@@ -123,11 +121,14 @@ class Thymio:
         while True:
             self.prox_horizontal = self.aseba.GetVariable(
                 "thymio-II", "prox.horizontal")
-            # adapt values depending on distance we want to keep from robots and light
-            if(self.prox_horizontal[2] >= 2900 and self.prox_horizontal[1] >= 1500) or (self.prox_horizontal[2] >= 2900 and self.prox_horizontal[3] >= 1500) or (self.prox_horizontal[2] >= 2900 and self.prox_horizontal[1] >= 1500 and self.prox_horizontal[3] >= 1500):
-                self.is_there_a_robot_in_front = True
-            else:
-                self.is_there_a_robot_in_front = False
+
+    def is_there_an_obstacle_ahead(self):
+          # adapt values depending on distance we want to keep from robots and light
+        if(self.prox_horizontal[2] >= 2900 and self.prox_horizontal[1] >= 1500) or (self.prox_horizontal[2] >= 2900 and self.prox_horizontal[3] >= 1500) or (self.prox_horizontal[2] >= 2900 and self.prox_horizontal[1] >= 1500 and self.prox_horizontal[3] >= 1500):
+            log.warn("Obstacle encountered")
+            return True
+        else:
+            return False
 
     # Move the robot
     def step(self, left, right, angle):
@@ -154,8 +155,8 @@ class Thymio:
         log.warn("Mate process started.")
         while not self.hasPartner:
             sleep(0.1)
-           #! might be very sketchy (the sense thread)
-            if self.is_there_a_robot_in_front:
+            #! might be very sketchy (the sense thread)
+            if self.is_there_an_obstacle_ahead():
                 if self.rx < 3 and not self.gender:
                     log.warn("Partner found")
                     log.robot("T'as de beaux yeux tu sais")
@@ -208,14 +209,14 @@ class Thymio:
         rotation = caculate_angle_to_dest(
             robot.x, robot.y, robot.angle, position.x, position.y)
 
-        while not self.is_close_to_angle(robot, rotation) and not self.hasPartner and not self.is_there_a_robot_in_front:
+        while not self.is_close_to_angle(robot, rotation) and not self.hasPartner and not self.is_there_an_obstacle_ahead():
             self.rotate()
 
-        while not self.is_close_to_position(robot, position) and not self.hasPartner and not self.is_there_a_robot_in_front:
+        while not self.is_close_to_position(robot, position) and not self.hasPartner and not self.is_there_an_obstacle_ahead():
             self.forward()
 
         # if robot in front, sleep for 2sec, the mating thread is still going and does its job.
-        if self.is_there_a_robot_in_front:
+        if self.is_there_an_obstacle_ahead():
             sleep(2)
             if not self.hasPartner:
                 # TODO hardcode avoidence position
