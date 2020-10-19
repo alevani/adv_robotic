@@ -130,13 +130,6 @@ class Thymio:
         else:
             return False
 
-    # Move the robot
-    def step(self, left, right, angle):
-        # self.pf.set_xya(left, right, angle)
-        self.aseba.SendEventName("motor.target", [left, right])
-        sleep(10)
-        self.stop()
-
     # Stop the robot's motion
     def stop(self):
         left_wheel = 0
@@ -179,11 +172,17 @@ class Thymio:
 
     def rotate(self):
         step = 1
+        self.aseba.SendEventName("motor.target", [200, 200])
+        sleep(10)  # ! depends on how much speeds and time it needs to rotate 1 degree + IT HAS TO MOVE ON A SPECIFIC SIDE, IT DEPENDS ON HOW WE CALULCATE THE ANGLE
+        self.stop()
         # TODO move robot physically from 1 degree
         self.pf.set_delta(0, 0, step)
 
     def forward(self):
-        # TODO forward physically from .5 centimeter?
+        # TODO forward physically from 1 centimeter
+        self.aseba.SendEventName("motor.target", [200, 200])
+        sleep(10)  # ! depends on how much speeds and time it needs to move 1cm
+        self.stop()
         step = 0.01
 
         #! is that correct?
@@ -191,14 +190,10 @@ class Thymio:
         self.pf.set_delta(dx, dy,  0)
 
     def is_close_to_position(self, robot, pos):
-        if abs(robot.x - pos.x) < ERROR_DISTANCE and abs(robot.y - pos.y) < ERROR_DISTANCE:
-            return True
-        return False
+        return True if abs(robot.x - pos.x) < ERROR_DISTANCE and abs(robot.y - pos.y) < ERROR_DISTANCE else False
 
     def is_close_to_angle(self, robot, angle):
-        if abs(robot.angle - angle) < ERROR_ANGLE:
-            return True
-        return False
+        return True if abs(robot.angle - angle) < ERROR_ANGLE else False
 
     def goto(self, position):
         robot = self.pf.position
