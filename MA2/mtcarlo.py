@@ -155,13 +155,14 @@ def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
 
 
 class ParticleFiltering:
-    def __init__(self, real_lidar: Lidar):
+    def __init__(self, real_lidar: Lidar, n):
         self.position = None
         self.real_lidar = real_lidar
-        self.calibrate()
+        # self.calibrate()
         self.dx = 0
         self.dy = 0
         self.da = 0
+        self.aseba = n
 
     def set_delta(self, dx, dy, da):
         self.dx = dx

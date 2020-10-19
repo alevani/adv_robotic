@@ -35,24 +35,12 @@ class Position:
 
 
 class Thymio:
-    def __init__(self, particle_filter):
+    def __init__(self, particle_filter, n):
 
         log.warn("Initialisation")
         log.warn("bus initialisation..")
 
-        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-        bus = dbus.SessionBus()
-        self.asebaNetworkObject = bus.get_object("ch.epfl.mobots.Aseba", "/")
-
-        log.aseba("Network object init..")
-        self.asebaNetwork = dbus.Interface(
-            self.asebaNetworkObject, dbus_interface="ch.epfl.mobots.AsebaNetwork"
-        )
-
-        log.aseba("Load file")
-        self.asebaNetwork.LoadScripts(
-            "thympi.aesl", reply_handler=self.dbusError, error_handler=self.dbusError
-        )
+        self.aseba = n
 
         self.pf = particle_filter
 
@@ -81,21 +69,13 @@ class Thymio:
         self.markers = [Position(.98, -.60), Position(.98, .60),
                         Position(-.98, .60), Position(-.98, -.60)]
 
-        self.aseba = self.asebaNetwork
-
         self.benchwarm()
 
     def set_color(self, color):
-        self.asebaNetwork.SendEventName("led.top", color)
-
-    def setup(self):
-        return self.asebaNetwork
+        self.aseba.SendEventName("led.top", color)
 
     def stopAsebamedulla(self):
         os.system("pkill -n asebamedulla")
-
-    def dbusError(self, e):
-        log.error("dbus error: %s" % str(e))
 
     # Periodically increase confidence
     def growConfidence(self):
@@ -106,17 +86,17 @@ class Thymio:
         self.confidence = 0
 
     def startCommunication(self):
-        self.asebaNetwork.SendEventName("prox.comm.enable", [1])
-        self.asebaNetwork.SendEventName("prox.comm.rx", [0])
+        self.aseba.SendEventName("prox.comm.enable", [1])
+        self.aseba.SendEventName("prox.comm.rx", [0])
 
     # ? Remeber to change tx number when finding a partner -> wuat?
     def sendInformation(self):
-        self.asebaNetwork.SendEventName("prox.comm.tx", [self.gender])
+        self.aseba.SendEventName("prox.comm.tx", [self.gender])
         threading.Timer(.1, self.sendInformation).start()
 
     # Remeber to change rx number after confirming a partner. This can be done the same way as the tx :)
     def receiveInformation(self):
-        self.rx = asebaNetwork.GetVariable("thymio-II", "prox.comm.rx")
+        self.rx = aseba.GetVariable("thymio-II", "prox.comm.rx")
         threading.Timer(.1, self.receiveInformation).start()
 
     def sense(self):
@@ -158,7 +138,7 @@ class Thymio:
                     log.robot("*Pokemon battle music intensifies*")
                     danceFloor = randint(3, 6)
                     for _ in range(5):
-                        self.asebaNetwork.SendEventName(
+                        self.aseba.SendEventName(
                             "prox.comm.tx", [danceFloor])
                     log.warn("Dance floor sent to partner (5x)")
                     self.set_color(PURPLE)
@@ -237,14 +217,33 @@ class Thymio:
         self.stop()
 
 
+def dbusError(self, e):
+    log.error("dbus error: %s" % str(e))
+
+
 if __name__ == '__main__':
     rest = False
+
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+    bus = dbus.SessionBus()
+    asebaNetworkObject = bus.get_object("ch.epfl.mobots.Aseba", "/")
+
+    log.aseba("Network object init..")
+    asebaNetwork = dbus.Interface(
+        asebaNetworkObject, dbus_interface="ch.epfl.mobots.AsebaNetwork"
+    )
+
+    log.aseba("Load file")
+    asebaNetwork.LoadScripts(
+        "thympi.aesl", reply_handler=dbusError, error_handler=dbusError
+    )
+
     try:
         log.warn("Setting up lidar")
         lidar = Lidar()
         log.warn("Setting up ParticleFiltering")
-        pf = ParticleFiltering(lidar)
-        robot = Thymio(pf)
+        pf = ParticleFiltering(lidar, asebaNetwork)
+        robot = Thymio(pf, asebaNetwork)
 
     except KeyboardInterrupt:
         log.error("Keyboard interrupt")

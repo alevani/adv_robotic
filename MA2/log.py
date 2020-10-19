@@ -11,13 +11,16 @@ class Logger:
         return now.strftime("%H:%M:%S")
 
     def warn(self, msg):
-        print("[", self.time, "][WARN]> ", msg)
+        # print("[", self.time, "][WARN]> ", msg)
+        print("[WARN]> ", msg)
 
     def robot(self, msg):
         print("> ", msg)
 
     def error(self, msg):
-        print("[", self.time, "][ERROR]> ", msg)
+        # print("[", self.time, "][ERROR]> ", msg)
+        print("[ERROR]> ", msg)
 
     def aseba(self, msg):
-        print("[", self.time, "][ASEBA]> ", msg)
+        # print("[", self.time, "][ASEBA]> ", msg)
+        print("[ASEBA]> ", msg)

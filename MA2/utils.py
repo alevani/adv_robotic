@@ -3,9 +3,10 @@ various utilitary function
 '''
 from cv2 import *
 from matplotlib.colors import hsv_to_rgb, rgb_to_hsv
-from math import atan, abs, cos, sin
+from math import atan, cos, sin
 
 DEBUG = True
+
 
 def show(img, title=''):
     title = str(title)
@@ -14,19 +15,21 @@ def show(img, title=''):
     destroyWindow(title)
 
 
-def rgb2hsv(r, g ,b): 
-    hsv = rgb_to_hsv((r, g, b)) 
-    return (hsv[0] * 180, hsv[1] * 255 , hsv[2]) 
-                    
+def rgb2hsv(r, g, b):
+    hsv = rgb_to_hsv((r, g, b))
+    return (hsv[0] * 180, hsv[1] * 255, hsv[2])
+
 
 def debug_img(img, title=''):
     if DEBUG:
         show(img, title='')
 
+
 def polar2cart(a, r):
     x = r * sin(a)
     y = r * cos(a)
     return (x, y)
+
 
 def caculate_angle_to_dest(robot_angle,
                            robot_x, robot_y,
@@ -49,7 +52,7 @@ def caculate_angle_to_dest(robot_angle,
         if dest_y > robot_y:
             return 90 + a
         elif dest_y <= robot_y:
-            return 270 - a 
+            return 270 - a
 
 
 def get_center(cnt):
@@ -58,6 +61,7 @@ def get_center(cnt):
     cX = int(M["m10"] / M["m00"])
     cY = int(M["m01"] / M["m00"])
     return (cX, cY)
+
 
 if __name__ == '__main__':
     from sys import argv
