@@ -237,7 +237,9 @@ class Thymio:
 if __name__ == '__main__':
     rest = False
     try:
+        log.warn("Setting up lidar")
         lidar = Lidar()
+        log.warn("Setting up ParticleFiltering")
         pf = ParticleFiltering(lidar)
         robot = Thymio(pf)
 

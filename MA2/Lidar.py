@@ -27,10 +27,10 @@ class Lidar:
     def get_scan_data(self):
         return [self.scan_data[x] / 1000 for x in list(range(0, 360, self.nb_samples))]
 
+
 class FakeLidar:
     def __init__(self, fake_robot):
         self.fake_robot = fake_robot
 
     def get_scan_data(self):
         return self.fake_robot.get_simulated_lidar_values()
-
