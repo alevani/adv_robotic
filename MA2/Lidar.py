@@ -3,7 +3,7 @@ import threading
 from math import floor
 from log import Logger
 
-NB_STOP = 10
+NB_STOP = 12
 
 
 class Lidar:

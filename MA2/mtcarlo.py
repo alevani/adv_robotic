@@ -1,21 +1,21 @@
-from dataclasses import dataclass
-from Lidar import Lidar
-from math import floor, radians
-from numpy import sin, cos, pi, sqrt, subtract, std, mean, array
-from random import *
 from shapely.geometry import LinearRing, LineString, Point, Polygon
-from time import sleep
+from numpy import sin, cos, pi, sqrt, subtract, std, mean, array
+from dataclasses import dataclass
 import matplotlib.pyplot as plt
-import shapely
+from math import floor, radians
 from picamera import PiCamera
-import sys
+from Lidar import Lidar
+from time import sleep
+from random import *
 import numpy as np
+import shapely
+import sys
 import cv2
 
 WORLD = None  # gonna be defined after World
-NB_SAMPLES = 20
-NB_BEST_CANDIDATES = 20
-NB_LIDAR_RAY = 10
+NB_SAMPLES = 10
+NB_BEST_CANDIDATES = 5
+NB_LIDAR_RAY = 12
 
 
 class World:
@@ -37,8 +37,22 @@ class World:
         a = radians(alpha)
         dest_x = x + cos(a) * 2*self.W
         dest_y = y + sin(a) * 2*self.H
+        # print(x, y, dest_x, dest_y)
         line = [(x, y), (dest_x, dest_y)]
-        ray = LineString(line)
+        try:
+            ray = LineString(line)
+        except:
+            print("-----------")
+            print(x)
+            print("--")
+            print(y)
+            print("--")
+            print(dest_x)
+            print("--")
+            print(dest_y)
+
+        # print("ray", ray)
+
         # print("ray", ray)
         s = self.rectangle.intersection(ray)
         # print("s", s)
@@ -165,6 +179,9 @@ class ParticleFiltering:
         self.aseba = n
 
     def set_delta(self, dx, dy, da):
+        print("Delta x", dx)
+        print("Delta y", dy)
+        print("Delta angle", da)
         self.dx = dx
         self.dy = dy
         self.da = da
@@ -221,8 +238,8 @@ class ParticleFiltering:
 
                 sample = self.move_sample(sample)
                 real_robot_lidar = self.real_lidar.get_scan_data()
+                print(real_robot_lidar)
 
-                print("hwhdoaihdahdoaihdaoidhoaihwo")
                 best_candidates = get_best_candidates(sample, real_robot_lidar)
                 new_candidates = []
 
@@ -231,7 +248,6 @@ class ParticleFiltering:
                     new_candidates.extend(cs)
 
                 sample = new_candidates
-                print("------------------------------------------------------------------------------------------------------------------------------")
                 self.position = best_candidates[0]
 
         except KeyboardInterrupt:

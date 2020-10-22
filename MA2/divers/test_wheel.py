@@ -75,8 +75,8 @@ if __name__ == '__main__':
         #     drive_x_cm(1)
         # # # Test for 1cm angle
 
-        robot.drive(-200, 200)
-        sleep(3.73)
+        robot.drive(-40, 25)
+        sleep(30)
         robot.stop()
     except KeyboardInterrupt:
         print("Stopping robot")

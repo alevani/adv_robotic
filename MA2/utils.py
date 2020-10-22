@@ -3,7 +3,7 @@ various utilitary function
 '''
 from cv2 import *
 from matplotlib.colors import hsv_to_rgb, rgb_to_hsv
-from math import atan, cos, sin
+from math import atan, cos, sin, pi, radians
 
 DEBUG = True
 
@@ -25,10 +25,20 @@ def debug_img(img, title=''):
         show(img, title='')
 
 
+def calculate_angular_speed_rotation(speed, degree=1, wheel_diam=9.45):
+    peri = pi * wheel_diam
+    sec_to_turn = peri / speed
+    return (sec_to_turn * degree) / 360.0
+
+
 def polar2cart(a, r):
+    a = radians(a)
     x = r * sin(a)
     y = r * cos(a)
-    return (x, y)
+    try:
+        return (x[0], y[0])
+    except:
+        return (x, y)
 
 
 def caculate_angle_to_dest(robot_angle,
