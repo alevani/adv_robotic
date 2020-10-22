@@ -7,10 +7,7 @@ from shapely.geometry import LinearRing, LineString, Point, Polygon
 from time import sleep
 import matplotlib.pyplot as plt
 import shapely
-from picamera import PiCamera
 import sys
-import numpy as np
-import cv2
 
 WORLD = None  # gonna be defined after World
 NB_SAMPLES = 200
@@ -129,7 +126,7 @@ def get_best_candidates(samples,
 
 def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
     '''
-    create `size` new virtual robots located around the given robot
+    create `size` new virtual robots located around the given robot 
     '''
     pos_delta = 0.03
     angle_delta = 10
@@ -158,7 +155,6 @@ class ParticleFiltering:
     def __init__(self, real_lidar: Lidar):
         self.position = None
         self.real_lidar = real_lidar
-        self.calibrate()
         self.dx = 0
         self.dy = 0
         self.da = 0
@@ -171,47 +167,14 @@ class ParticleFiltering:
     def move_sample(self, sample):
         new_sample = []
         for r in sample:
-            nr = Robot(angle=r.angle + self.da,
-                       x=r.x + self.dx,
-                       y=r.y + self.dy)
+            nr = Robot(angle = r.angle + self.da,
+                       x = r.x + self.dx,
+                       y = r.y + self.dy)
             new_sample.append(nr)
         self.dx = 0
         self.dy = 0
         self.da = 0
         return new_sample
-
-    def stop(self):
-        left_wheel = 0
-        right_wheel = 0
-        self.aseba.SendEventName("motor.target", [left_wheel, right_wheel])
-
-    def calibrate(self):
-        #! Do aseba init somewhere, but it's already being done in robot_dance so maybe to times might crash the whole thing.
-        colorOrder = []
-        self.stop()
-
-        camera = PiCamera()
-        camera.start_preview()
-        camera.resolution = (320, 240)
-        for _ in range(8):
-
-            image = np.empty((240, 320, 3), dtype=np.uint8)
-            camera.capture(image, 'bgr')
-
-            for color, mask_fn in cv2.MASKS.items():
-                bicol = cv2.apply_mask(image, mask_fn)
-                isDetected = cv2.circle_detector(bicol)[1]
-                if isDetected and color not in colorOrder:
-                    colorOrder.append(color)
-
-            left_wheel = 200
-            right_wheel = -200
-
-            self.aseba.SendEventName("motor.target", [left_wheel, right_wheel])
-            sleep(1.0)  # adjust depending on how long it will take to make 1/8 turn
-            self.stop()
-        camera.stop_preview()
-        return colorOrder
 
     def localise(self):
         convergence_iteration = 10
@@ -246,7 +209,9 @@ if __name__ == '__main__':
     scanner_thread.start()
     while True:
         cmd = input('command')
-        if cmd == 'print'
+        if cmd == 'print':
+            print()
+
 
 
 
@@ -284,3 +249,4 @@ def old_main():
                 # sleep(0.1)
     except KeyboardInterrupt:
         sys.exit()
+
