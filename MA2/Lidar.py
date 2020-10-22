@@ -1,24 +1,27 @@
-# from adafruit_rplidar import RPLidar
+from adafruit_rplidar import RPLidar
 import threading
 from math import floor
+from log import Logger
 
 NB_STOP = 10
 
 
 class Lidar:
     def __init__(self, nb_stop=NB_STOP):
+        self.log = Logger()
         self.nb_stop = nb_stop
-        self.nb_samples = 360 / nb_stop
+        self.nb_samples = int(360 / nb_stop)
 
         PORT_NAME = '/dev/ttyUSB0'
         self.lidar = RPLidar(None, PORT_NAME)
 
-        print('start lidar scan thread')
+        self.log.warn('start lidar scan thread')
         self.scanner_thread = threading.Thread(target=self.lidarScan)
         self.scanner_thread.start()
+        self.scan_data = [0]*360
 
     def lidarScan(self):
-        print("Starting background lidar scanning")
+        self.log.warn("Starting background lidar scanning")
         while True:
             for scan in self.lidar.iter_scans():
                 for (_, angle, distance) in scan:

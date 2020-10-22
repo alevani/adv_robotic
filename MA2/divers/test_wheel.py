@@ -15,9 +15,7 @@ class Thymio:
         self.aseba = self.setup()
 
     def drive(self, left_wheel_speed, right_wheel_speed):
-        print("Left_wheel_speed: " + str(left_wheel_speed))
-        print("Right_wheel_speed: " + str(right_wheel_speed))
-
+        print("driving")
         left_wheel = left_wheel_speed
         right_wheel = right_wheel_speed
 
@@ -43,6 +41,7 @@ class Thymio:
         )
 
         # scanning_thread = Process(target=robot.drive, args=(200,200,))
+        sleep(10)
         return asebaNetwork
 
     def stopAsebamedulla(self):
@@ -63,17 +62,25 @@ if __name__ == '__main__':
     try:
         # Test for 1cm step forward
         robot = Thymio()
-        robot.drive(200, 200)
         sleep(2)
-        robot.stop()
+        # print("testing now")
 
-        # Test for 1cm angle
-        robot = Thymio()
+        # def drive_x_cm(x):
+        #     error = 0
+        #     time = x * .125 + error
+        #     robot.drive(200, 200)
+        #     sleep(time)
+        #     robot.stop()
+        # for _ in range(0, 16):
+        #     drive_x_cm(1)
+        # # # Test for 1cm angle
+
         robot.drive(-200, 200)
-        sleep(2)
+        sleep(3.73)
         robot.stop()
     except KeyboardInterrupt:
         print("Stopping robot")
+        robot.stop()
         exit_now = True
         sleep(1)
         os.system("pkill -n asebamedulla")

@@ -10,9 +10,9 @@ import shapely
 import sys
 
 WORLD = None  # gonna be defined after World
-NB_SAMPLES = 200
+NB_SAMPLES = 20
 NB_BEST_CANDIDATES = 20
-NB_LIDAR_RAY = 4
+NB_LIDAR_RAY = 10
 
 
 class World:
@@ -152,12 +152,13 @@ def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
 
 
 class ParticleFiltering:
-    def __init__(self, real_lidar: Lidar):
+    def __init__(self, real_lidar: Lidar, n):
         self.position = None
         self.real_lidar = real_lidar
         self.dx = 0
         self.dy = 0
         self.da = 0
+        self.aseba = n
 
     def set_delta(self, dx, dy, da):
         self.dx = dx
@@ -177,23 +178,23 @@ class ParticleFiltering:
         return new_sample
 
     def localise(self):
-        convergence_iteration = 10
         sample = create_random_sample()
         try:
             while True:
 
                 sample = self.move_sample(sample)
                 real_robot_lidar = self.real_lidar.get_scan_data()
-                for _ in range(convergence_iteration):
-                    best_candidates = get_best_candidates(
-                        sample, real_robot_lidar)
-                    # self.set_position(best_candidates[0])
-                    new_candidates = []
-                    for virtual_robot in best_candidates:
-                        cs = resample_around(virtual_robot)
-                        new_candidates.extend(cs)
-                    print(best_candidates[0])
-                    sample = new_candidates
+                print("hwhdoaihdahdoaihdaoidhoaihwo")
+                best_candidates = get_best_candidates(sample, real_robot_lidar)
+                new_candidates = []
+
+                for virtual_robot in best_candidates:
+                    cs = resample_around(virtual_robot)
+                    new_candidates.extend(cs)
+
+                sample = new_candidates
+                print("--------------------------------------------------------------------------")
+                self.position = best_candidates[0]
 
         except KeyboardInterrupt:
             sys.exit()
@@ -236,10 +237,7 @@ def old_main():
                 # change for real lidar value
                 real_robot_lidar = real_robot.get_simulated_lidar_values()
                 best_candidates = get_best_candidates(sample, real_robot_lidar)
-                # print("best_candidates", best_candidates)
                 print("best", best_candidates[0])
-                # print(best_candidates[0].which_corner())
-                # print(set([b.which_corner() for b in best_candidates]))
                 new_candidates = []
                 for virtual_robot in best_candidates:
                     cs = resample_around(virtual_robot)
