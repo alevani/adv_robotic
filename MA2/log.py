@@ -24,3 +24,7 @@ class Logger:
     def aseba(self, msg):
         # print("[", self.time, "][ASEBA]> ", msg)
         print("[ASEBA]> ", msg)
+
+    def info(self, msg):
+        # print("[", self.time, "][ASEBA]> ", msg)
+        print("[INFO]> ", msg)

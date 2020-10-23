@@ -12,13 +12,16 @@ from Lidar import *
 import threading
 import dbus
 import os
+import math
 
 #! close unused thread?
 
 os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
 
 ERROR_ANGLE = 2
-ERROR_DISTANCE = 30
+ERROR_DISTANCE = 0.05
+
+ROTATION_SLEEP_TIME = calculate_angular_speed_rotation(1)
 
 PURPLE = [255, 0, 255]
 RED = [255, 0, 0]
@@ -47,13 +50,13 @@ class Thymio:
         self.threadPf.start()
         sleep(1)  # ! to make sure it converge at least once
 
-        log.warn("Start Growing confidence...")
-        self.confidence = 0
-        self.growConfidence()
+        # log.warn("Start Growing confidence...")
+        self.confidence = 11
+        # self.growConfidence()
 
-        log.warn('Start sensing thread')
-        self.threadSense = Thread(target=self.sense)
-        self.threadSense.start()
+        # log.warn('Start sensing thread')
+        # self.threadSense = Thread(target=self.sense)
+        # self.threadSense.start()
 
         self.hasPartner = False
 
@@ -108,12 +111,13 @@ class Thymio:
                 "thymio-II", "prox.horizontal")
 
     def is_there_an_obstacle_ahead(self):
-          # adapt values depending on distance we want to keep from robots and light
-        if(self.prox_horizontal[2] >= 2900 and self.prox_horizontal[1] >= 1500) or (self.prox_horizontal[2] >= 2900 and self.prox_horizontal[3] >= 1500) or (self.prox_horizontal[2] >= 2900 and self.prox_horizontal[1] >= 1500 and self.prox_horizontal[3] >= 1500):
-            log.warn("Obstacle encountered")
-            return True
-        else:
-            return False
+        return False
+        #   # adapt values depending on distance we want to keep from robots and light
+        # if(self.prox_horizontal[2] >= 2900 and self.prox_horizontal[1] >= 1500) or (self.prox_horizontal[2] >= 2900 and self.prox_horizontal[3] >= 1500) or (self.prox_horizontal[2] >= 2900 and self.prox_horizontal[1] >= 1500 and self.prox_horizontal[3] >= 1500):
+        #     log.warn("Obstacle encountered")
+        #     return True
+        # else:
+        #     return False
 
     # Stop the robot's motion
     def stop(self):
@@ -148,9 +152,9 @@ class Thymio:
                     self.hasPartner = True
 
     def wander(self):
-        log.warn("Enough confidence, now wandering.")
-        self.thread = Thread(target=self.mate)
-        self.thread.start()
+        # log.warn("Enough confidence, now wandering.")
+        # self.thread = Thread(target=self.mate)
+        # self.thread.start()
         while not self.hasPartner:
             for marker in self.markers:
                 self.goto(marker)
@@ -158,48 +162,99 @@ class Thymio:
 
     def rotate(self):
         step = 1
-        self.aseba.SendEventName("motor.target", [-200, 200])
+
+        # 200   25
+        # 8    1
+        self.aseba.SendEventName("motor.target", [-40, 25])
         # ! IT HAS TO MOVE ON A SPECIFIC SIDE, IT DEPENDS ON HOW WE CALULCATE THE ANGLE
-        sleep(.015)
+
+        sleep(ROTATION_SLEEP_TIME)
         self.stop()
         self.pf.set_delta(0, 0, step)
-        log.robot("Rotating one degree to the left")
-        log.warn("Current approximated position: ", self.pf.position)
 
-    def forward(self):
+        log.info(("Approx ", self.pf.position.angle))
+
+        # log.warn("Current approximated position: " +
+        #          str(self.pf.position.x) + " " + str(self.pf.position.y) + " "+str(self.pf.position.angle))
+
+    def forward(self, angle):
         dist = 1  # cm
         time = dist * .125
-        self.drive(200, 200)
+        self.aseba.SendEventName("motor.target", [200, 200])
         sleep(time)
         self.stop()
 
         step = 0.01
         #! is that correct?
-        dx, dy = polarToCart(step, robot.angle)
-        self.pf.set_delta(dx, dy,  0)
+        print(step, " step : Forward function")
+        print(angle, " angle : Forward function")
+        dx, dy = polarToCart(step, angle)
+        self.debug(dx, "dx : Forward function")
+        self.debug(dy, "dy : Forward function")
+        self.pf.set_delta(dx[0][0], dy[0][0],  0)
 
     def is_close_to_position(self, robot, pos):
         return True if abs(robot.x - pos.x) < ERROR_DISTANCE and abs(robot.y - pos.y) < ERROR_DISTANCE else False
 
-    def is_close_to_angle(self, robot, angle):
-        return True if abs(robot.angle - angle) < ERROR_ANGLE else False
+    def angle_diff(self, a, b):
+        d = a - b
+        if d > 180:
+            d -= 360
+        if d < -180:
+            d += 360
+        return abs(d)
+
+    def is_close_to_angle(self, robot_angle, angle):
+        if self.angle_diff(robot_angle, angle) < 30:
+            res = True
+        else:
+            res = False
+
+        # a = True if self.angle_diff(
+        #   robot_angle, angle) < ERROR_ANGLE else False
+        return res
+
+    def debug(self, x, msg):
+        try:
+            test = x[0]
+            print(msg)
+            print(x)
+        except:
+            pass
 
     def goto(self, position):
         robot = self.pf.position
 
-        log.warn(("From ", robot.x, robot.y, robot.angle,
-                  " go to ", position.x, " ", position.y))
+        # while True:
+        #     sleep(0.1)
+        #     robot = self.pf.position
+        #     log.warn(("Approx pos: ", robot.x, robot.y, robot.angle))
 
         rotation = caculate_angle_to_dest(
             robot.x, robot.y, robot.angle, position.x, position.y)
 
-        log.warn("Angle to be aligned with objective: ", rotation)
+        self.debug(robot.x, "Goto, robot.x")
+        self.debug(robot.y, "Goto, robot.y")
+        self.debug(robot.angle, "Goto, robot.angle")
 
-        while not self.is_close_to_angle(robot, rotation) and not self.hasPartner and not self.is_there_an_obstacle_ahead():
+        # log.warn(("From ", robot.x, robot.y, robot.angle,
+        #           " go to ", position.x, " ", position.y, " ", rotation))
+
+        while not self.is_close_to_angle(robot.angle, rotation) and not self.hasPartner and not self.is_there_an_obstacle_ahead():
+            robot = self.pf.position
             self.rotate()
 
+        self.debug(robot.x, "after while rotation, Goto, robot.x")
+        self.debug(robot.y, "after while rotation, Goto, robot.y")
+        self.debug(robot.angle, "after while rotation, Goto, robot.angle")
+
         while not self.is_close_to_position(robot, position) and not self.hasPartner and not self.is_there_an_obstacle_ahead():
-            self.forward()
+            robot = self.pf.position
+            self.forward(rotation)
+
+        self.debug(robot.x, "after while forward, Goto, robot.x")
+        self.debug(robot.y, "after while forward, Goto, robot.y")
+        self.debug(robot.angle, "after while forward, Goto, robot.angle")
 
         # if robot in front, sleep for 2sec, the mating thread is still going and does its job.
         if self.is_there_an_obstacle_ahead():
@@ -257,9 +312,11 @@ if __name__ == '__main__':
 
     except KeyboardInterrupt:
         log.error("Keyboard interrupt")
-        log.error("Stopping robot")
-        robot.stop()
+        log.info("Stopping robot")
+        left_wheel = 0
+        right_wheel = 0
+        asebaNetwork.SendEventName("motor.target", [left_wheel, right_wheel])
         exit_now = True
         sleep(1)
         os.system("pkill -n asebamedulla")
-        log.error("asebamodulla killed")
+        log.info("asebamodulla killed")

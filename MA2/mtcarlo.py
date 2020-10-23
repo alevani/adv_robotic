@@ -1,11 +1,14 @@
 from dataclasses import dataclass
 from Lidar import Lidar
 from math import floor, radians
-from numpy import sin, cos, pi, sqrt, subtract, std, mean, array
+from picamera import PiCamera
 from random import *
 from shapely.geometry import LinearRing, LineString, Point, Polygon
 from time import sleep, time
+import cv2
 import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+import numpy as np
 import shapely
 import sys
 
@@ -34,8 +37,22 @@ class World:
         a = radians(alpha)
         dest_x = x + cos(a) * 2*self.W
         dest_y = y + sin(a) * 2*self.H
+        # print(x, y, dest_x, dest_y)
         line = [(x, y), (dest_x, dest_y)]
-        ray = LineString(line)
+        try:
+            ray = LineString(line)
+        except:
+            print("-----------")
+            print(x)
+            print("--")
+            print(y)
+            print("--")
+            print(dest_x)
+            print("--")
+            print(dest_y)
+
+        # print("ray", ray)
+
         # print("ray", ray)
         s = self.rectangle.intersection(ray)
         # print("s", s)
@@ -160,6 +177,9 @@ class ParticleFiltering:
         self.aseba = n
 
     def set_delta(self, dx, dy, da):
+        print("Delta x", dx)
+        print("Delta y", dy)
+        print("Delta angle", da)
         self.dx = dx
         self.dy = dy
         self.da = da
@@ -182,6 +202,8 @@ class ParticleFiltering:
             while True:
                 sample = self.move_sample(sample)
                 real_robot_lidar = self.real_lidar.get_scan_data()
+                print(real_robot_lidar)
+
                 best_candidates = get_best_candidates(sample, real_robot_lidar)
                 new_candidates = []
 
