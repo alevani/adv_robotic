@@ -4,15 +4,15 @@ from math import floor, radians
 from numpy import sin, cos, pi, sqrt, subtract, std, mean, array
 from random import *
 from shapely.geometry import LinearRing, LineString, Point, Polygon
-from time import sleep
+from time import sleep, time
 import matplotlib.pyplot as plt
 import shapely
 import sys
 
 WORLD = None  # gonna be defined after World
-NB_SAMPLES = 20
-NB_BEST_CANDIDATES = 20
-NB_LIDAR_RAY = 10
+NB_SAMPLES = 10
+NB_BEST_CANDIDATES = 5
+NB_LIDAR_RAY = 12
 
 
 class World:
@@ -60,10 +60,10 @@ class Robot:
             rays.append(ray)
         return rays
 
-    def move(self, dx, dy, da):
-        self.x += dx
-        self.y += dy
-        self.angle += da
+    # def move(self, dx, dy, da):
+    #     self.x += dx
+    #     self.y += dy
+    #     self.angle += da
 
     def which_corner(self) -> str:
         ''' in which corner of the map is located the robot'''
@@ -123,7 +123,6 @@ def get_best_candidates(samples,
     only_robots = [c[0] for c in candidates]
     return only_robots[: nb_best_candidates]
 
-
 def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
     '''
     create `size` new virtual robots located around the given robot 
@@ -152,7 +151,7 @@ def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
 
 
 class ParticleFiltering:
-    def __init__(self, real_lidar: Lidar, n):
+    def __init__(self, real_lidar: Lidar, n=None):
         self.position = None
         self.real_lidar = real_lidar
         self.dx = 0
@@ -181,10 +180,8 @@ class ParticleFiltering:
         sample = create_random_sample()
         try:
             while True:
-
                 sample = self.move_sample(sample)
                 real_robot_lidar = self.real_lidar.get_scan_data()
-                print("hwhdoaihdahdoaihdaoidhoaihwo")
                 best_candidates = get_best_candidates(sample, real_robot_lidar)
                 new_candidates = []
 
@@ -193,8 +190,8 @@ class ParticleFiltering:
                     new_candidates.extend(cs)
 
                 sample = new_candidates
-                print("--------------------------------------------------------------------------")
                 self.position = best_candidates[0]
+                print(self.position)
 
         except KeyboardInterrupt:
             sys.exit()
@@ -203,7 +200,8 @@ class ParticleFiltering:
 if __name__ == '__main__':
     from Lidar import FakeLidar
     import threading
-    fake_lidar = FakeLidar(Robot(x=0.30, y=0.50, angle=35))
+    fake_lidar = FakeLidar(Robot(x=0, y=0, angle=90))
+    print(fake_lidar.get_scan_data())
     pf = ParticleFiltering(fake_lidar)
     # pf.localise()
     scanner_thread = threading.Thread(target=pf.localise)
@@ -221,7 +219,7 @@ if __name__ == '__main__':
 def old_main():
     WORLD = World()
     convergence_iteration = 10
-    real_robot = Robot(x=.8, y=-0.23, angle=57)
+    real_robot = Robot(x=0, y=0, angle=57)
     # real_robot = Robot(angle=0, x=0, y=0)
     sample = create_random_sample()
 

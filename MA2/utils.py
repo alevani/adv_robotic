@@ -1,9 +1,9 @@
 '''
 various utilitary function
 '''
-from cv2 import *
+import cv2
 from matplotlib.colors import hsv_to_rgb, rgb_to_hsv
-from math import atan, cos, sin
+from math import atan, cos, sin, radians
 
 DEBUG = True
 
@@ -11,8 +11,8 @@ DEBUG = True
 def show(img, title=''):
     title = str(title)
     cv2.imshow(title, img)
-    waitKey(0)
-    destroyWindow(title)
+    cv2.waitKey(0)
+    cv2.destroyWindow(title)
 
 
 def rgb2hsv(r, g, b):
@@ -26,6 +26,7 @@ def debug_img(img, title=''):
 
 
 def polar2cart(a, r):
+    a = radians(a)
     x = r * sin(a)
     y = r * cos(a)
     return (x, y)
@@ -54,6 +55,16 @@ def caculate_angle_to_dest(robot_angle,
         elif dest_y <= robot_y:
             return 270 - a
 
+def timer(func):
+    import time
+    def wrapper(*arg, **kw):
+        '''source: http://www.daniweb.com/code/snippet368.html'''
+        t1 = time.time()
+        res = func(*arg, **kw)
+        t2 = time.time()
+        print((t2 - t1), res, func.__name__)
+        return res
+    return wrapper
 
 def get_center(cnt):
     # https://www.pyimagesearch.com/2016/02/01/opencv-center-of-contour/

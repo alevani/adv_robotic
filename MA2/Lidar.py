@@ -1,4 +1,4 @@
-from adafruit_rplidar import RPLidar
+# from adafruit_rplidar import RPLidar
 import threading
 from math import floor
 from log import Logger
