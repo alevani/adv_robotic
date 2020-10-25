@@ -3,7 +3,7 @@ from Lidar import Lidar
 from dataclasses import dataclass
 from math import radians, cos, sin, sqrt
 from random import randint, uniform
-from shapely.geometry import LinearRing, LineString 
+from shapely.geometry import LinearRing, LineString
 from time import sleep, time
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,9 +32,9 @@ class World:
     def return_inter(self, alpha, x, y):
         ''' Return world intersection with a ray'''
         if x > self.right_border or x < self.left_border \
-          or y > self.top_border or y < self.bottom_border:
+                or y > self.top_border or y < self.bottom_border:
             print("XXXXXXXXXXXX\n" * 30)
-            print(" VALUES OUT OF WORLD'S BORDERS")
+            print(" VALUES OUT OF WORLD'S BORDERS", x, y, alpha)
             print("XXXXXXXXXXXX\n" * 30)
             return None
         # print("coor", alpha, x, y)
@@ -181,11 +181,10 @@ class ParticleFiltering:
         self.dy = 0
         self.da = 0
         self.aseba = n
+        self.has_converged = False
 
     def set_delta(self, dx, dy, da):
-        print("Delta x", dx)
-        print("Delta y", dy)
-        print("Delta angle", da)
+        self.has_converged = False
         self.dx = dx
         self.dy = dy
         self.da = da
@@ -193,9 +192,9 @@ class ParticleFiltering:
     def move_sample(self, sample):
         new_sample = []
         for r in sample:
-            nr = Robot(angle = r.angle + self.da,
-                       x = r.x + self.dx,
-                       y = r.y + self.dy)
+            nr = Robot(angle=r.angle + self.da,
+                       x=r.x + self.dx,
+                       y=r.y + self.dy)
             new_sample.append(nr)
         self.dx = 0
         self.dy = 0
@@ -210,8 +209,9 @@ class ParticleFiltering:
                 real_robot_lidar = self.real_lidar.get_scan_data()
                 # print(real_robot_lidar)
 
-                best_candidates_w_fitness = get_best_candidates(sample, real_robot_lidar)
-                best_candidates = [ x[0] for x in best_candidates_w_fitness ]
+                best_candidates_w_fitness = get_best_candidates(
+                    sample, real_robot_lidar)
+                best_candidates = [x[0] for x in best_candidates_w_fitness]
                 new_candidates = []
 
                 for virtual_robot in best_candidates:
@@ -221,37 +221,8 @@ class ParticleFiltering:
                 sample = new_candidates
                 self.position = best_candidates[0]
                 fitness = best_candidates_w_fitness[0][1]
-                print(self.position, fitness)
-
-        except KeyboardInterrupt:
-            sys.exit()
-
-    def localise_separate_corner(self):
-        # buggy: sample move from one corner to another when resampled too close to the border ( x or y axis )
-        from collections import defaultdict
-        first_sample = create_random_sample()
-        corners = [ 'top_left', 'top_right', 'bottom_left', 'bottom_right' ]
-        samples = defaultdict(list)
-        for r in first_sample:
-            corner = r.which_corner()
-            samples[corner].append(r)
-        try:
-            while True:
-                for corner in corners:
-                    samples[corner] = self.move_sample(samples[corner])
-                    real_robot_lidar = self.real_lidar.get_scan_data()
-                    # print(real_robot_lidar)
-                    best_candidates = get_best_candidates(samples[corner], real_robot_lidar)
-                    new_candidates = []
-
-                    for virtual_robot in best_candidates:
-                        cs = resample_around(virtual_robot)
-                        new_candidates.extend(cs)
-
-                    samples[corner] = new_candidates
-                    self.position = best_candidates[0]
-                    print(corner+'\t', self.position)
-                print('---')
+                self.has_converged = True
+                print("-------------------------- ", self.position, fitness)
 
         except KeyboardInterrupt:
             sys.exit()
@@ -271,5 +242,3 @@ if __name__ == '__main__':
         cmd = input('command')
         if cmd == 'print':
             print()
-
-

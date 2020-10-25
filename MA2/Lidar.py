@@ -1,4 +1,4 @@
-# from adafruit_rplidar import RPLidar
+from adafruit_rplidar import RPLidar
 import threading
 from math import floor
 from log import Logger
@@ -28,7 +28,11 @@ class Lidar:
                     self.scan_data[min([359, floor(angle)])] = distance
 
     def get_scan_data(self):
-        return [self.scan_data[x] / 1000 for x in list(range(0, 360, self.nb_samples))]
+
+        a = [self.scan_data[x] /
+             1000 for x in list(range(0, 360, self.nb_samples))]
+        print(a)
+        return a
 
 
 class FakeLidar:
