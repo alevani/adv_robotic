@@ -1,16 +1,14 @@
-from dataclasses import dataclass
+
 from Lidar import Lidar
-from math import floor, radians
-from picamera import PiCamera
-from random import *
-from shapely.geometry import LinearRing, LineString, Point, Polygon
+from dataclasses import dataclass
+from math import radians, cos, sin, sqrt
+from random import randint, uniform
+from shapely.geometry import LinearRing, LineString 
 from time import sleep, time
-import cv2
-import matplotlib.pyplot as plt
 import matplotlib.pyplot as plt
 import numpy as np
-import shapely
 import sys
+
 
 WORLD = None  # gonna be defined after World
 NB_SAMPLES = 10
@@ -33,6 +31,12 @@ class World:
 
     def return_inter(self, alpha, x, y):
         ''' Return world intersection with a ray'''
+        if x > self.right_border or x < self.left_border \
+          or y > self.top_border or y < self.bottom_border:
+            print("XXXXXXXXXXXX\n" * 30)
+            print(" VALUES OUT OF WORLD'S BORDERS")
+            print("XXXXXXXXXXXX\n" * 30)
+            return None
         # print("coor", alpha, x, y)
         a = radians(alpha)
         dest_x = x + cos(a) * 2*self.W
@@ -110,7 +114,8 @@ def lidar_fitness(real_values: list, simulated_values: list) -> float:
     '''Fitness showing how close are the simulated lidar values
     to the real lidar values. Lower is better ( closer )
     '''
-    return sum(abs(subtract(real_values, simulated_values)))
+    # TODO: refactored with numpy function, verify if still accurate
+    return np.sum(np.abs(np.subtract(real_values, simulated_values)))
 
 
 def create_random_sample(size=NB_SAMPLES, world=WORLD) -> list:
@@ -137,8 +142,9 @@ def get_best_candidates(samples,
         candidates.append((virtual_robot, fit))
 
     candidates.sort(key=lambda candidates: candidates[1])
-    only_robots = [c[0] for c in candidates]
-    return only_robots[: nb_best_candidates]
+    # only_robots = [c[0] for c in candidates]
+    return candidates[: nb_best_candidates]
+
 
 def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
     '''
@@ -202,9 +208,10 @@ class ParticleFiltering:
             while True:
                 sample = self.move_sample(sample)
                 real_robot_lidar = self.real_lidar.get_scan_data()
-                print(real_robot_lidar)
+                # print(real_robot_lidar)
 
-                best_candidates = get_best_candidates(sample, real_robot_lidar)
+                best_candidates_w_fitness = get_best_candidates(sample, real_robot_lidar)
+                best_candidates = [ x[0] for x in best_candidates_w_fitness ]
                 new_candidates = []
 
                 for virtual_robot in best_candidates:
@@ -213,7 +220,38 @@ class ParticleFiltering:
 
                 sample = new_candidates
                 self.position = best_candidates[0]
-                print(self.position)
+                fitness = best_candidates_w_fitness[0][1]
+                print(self.position, fitness)
+
+        except KeyboardInterrupt:
+            sys.exit()
+
+    def localise_separate_corner(self):
+        # buggy: sample move from one corner to another when resampled too close to the border ( x or y axis )
+        from collections import defaultdict
+        first_sample = create_random_sample()
+        corners = [ 'top_left', 'top_right', 'bottom_left', 'bottom_right' ]
+        samples = defaultdict(list)
+        for r in first_sample:
+            corner = r.which_corner()
+            samples[corner].append(r)
+        try:
+            while True:
+                for corner in corners:
+                    samples[corner] = self.move_sample(samples[corner])
+                    real_robot_lidar = self.real_lidar.get_scan_data()
+                    # print(real_robot_lidar)
+                    best_candidates = get_best_candidates(samples[corner], real_robot_lidar)
+                    new_candidates = []
+
+                    for virtual_robot in best_candidates:
+                        cs = resample_around(virtual_robot)
+                        new_candidates.extend(cs)
+
+                    samples[corner] = new_candidates
+                    self.position = best_candidates[0]
+                    print(corner+'\t', self.position)
+                print('---')
 
         except KeyboardInterrupt:
             sys.exit()
@@ -222,10 +260,11 @@ class ParticleFiltering:
 if __name__ == '__main__':
     from Lidar import FakeLidar
     import threading
-    fake_lidar = FakeLidar(Robot(x=0, y=0, angle=90))
+    fake_lidar = FakeLidar(Robot(x=0.80, y=0.30, angle=90))
     print(fake_lidar.get_scan_data())
     pf = ParticleFiltering(fake_lidar)
     # pf.localise()
+    # scanner_thread = threading.Thread(target=pf.localise)
     scanner_thread = threading.Thread(target=pf.localise)
     scanner_thread.start()
     while True:
@@ -233,38 +272,4 @@ if __name__ == '__main__':
         if cmd == 'print':
             print()
 
-
-
-
-# not used but usefull
-
-def old_main():
-    WORLD = World()
-    convergence_iteration = 10
-    real_robot = Robot(x=0, y=0, angle=57)
-    # real_robot = Robot(angle=0, x=0, y=0)
-    sample = create_random_sample()
-
-    try:
-        while True:
-            raw = input('continue')
-            if len(raw) > 0:
-                xy = [float(x) for x in raw.split(',')]
-                print(xy)
-                real_robot.x += xy[0]
-                real_robot.y += xy[1]
-            for _ in range(convergence_iteration):
-                # change for real lidar value
-                real_robot_lidar = real_robot.get_simulated_lidar_values()
-                best_candidates = get_best_candidates(sample, real_robot_lidar)
-                print("best", best_candidates[0])
-                new_candidates = []
-                for virtual_robot in best_candidates:
-                    cs = resample_around(virtual_robot)
-                    new_candidates.extend(cs)
-                sample = new_candidates
-
-                # sleep(0.1)
-    except KeyboardInterrupt:
-        sys.exit()
 

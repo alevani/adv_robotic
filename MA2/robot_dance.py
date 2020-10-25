@@ -1,14 +1,14 @@
 #!/usr/bin/python3
 from threading import Thread
+from dataclasses import dataclass
 from random import randint
 import dbus.mainloop.glib
-from numpy import arctan
 from time import sleep
 from log import Logger
-from mtcarlo import *
+from mtcarlo import ParticleFiltering
 from time import time
-from utils import *
-from Lidar import *
+from utils import polar2cart, calculate_angular_speed_rotation, caculate_angle_to_dest
+from Lidar import Lidar
 import threading
 import dbus
 import os
@@ -102,7 +102,7 @@ class Thymio:
 
     # Remeber to change rx number after confirming a partner. This can be done the same way as the tx :)
     def receiveInformation(self):
-        self.rx = aseba.GetVariable("thymio-II", "prox.comm.rx")
+        self.rx = self.aseba.GetVariable("thymio-II", "prox.comm.rx")
         threading.Timer(.1, self.receiveInformation).start()
 
     def sense(self):
@@ -158,7 +158,7 @@ class Thymio:
         while not self.hasPartner:
             for marker in self.markers:
                 self.goto(marker)
-        self.dance(dancefloor)
+        self.dance(self.dancefloor)
 
     def rotate(self):
         step = 1
@@ -186,11 +186,7 @@ class Thymio:
 
         step = 0.01
         #! is that correct?
-        print(step, " step : Forward function")
-        print(angle, " angle : Forward function")
-        dx, dy = polarToCart(step, angle)
-        self.debug(dx, "dx : Forward function")
-        self.debug(dy, "dy : Forward function")
+        dx, dy = polar2cart(step, angle)
         self.pf.set_delta(dx[0][0], dy[0][0],  0)
 
     def is_close_to_position(self, robot, pos):
@@ -269,7 +265,7 @@ class Thymio:
 
         #! Has to set it to false, don't remove
         self.hasPartner = False
-        goto(self.dancefloor[df-3])
+        self.goto(self.dancefloor[df-3])
         # dance
         self.rest()
 

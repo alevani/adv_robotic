@@ -1,8 +1,8 @@
 #! /usr/bin/env python3.7
 
-from cv2 import *
+import cv2 
 import numpy as np
-from utils import *
+import utils
 
 
 def red_mask(hsv_image):
@@ -37,6 +37,7 @@ def green_mask(hsv_image):
     light = np.array([60, 255, 255])
     mask = cv2.inRange(hsv_image, dark, light)
     return mask
+
 
 MASKS = {
     'blue': blue_mask,
@@ -107,7 +108,7 @@ def apply_mask(bgr_img, mask_fn):
 
 
 if __name__ == '__main__':
-    img = imread('./img/color_wheel.jpg')
+    img = cv2.imread('./img/color_wheel.jpg')
     for color, mask_fn in MASKS.items():
         bicol = apply_mask(img, mask_fn)
         if circle_detector(bicol):
