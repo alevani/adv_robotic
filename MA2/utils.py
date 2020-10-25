@@ -49,21 +49,35 @@ def caculate_angle_to_dest(robot_angle,
     destination to calculate the angle of the destination from the origin.
     Angles are in degrees.
     """
+    from math import degrees
     dx = abs(robot_x - dest_x)
     dy = abs(robot_y - dest_y)
-    if dest_x > robot_x:
+    if dest_x == robot_x:
+        if dest_y > robot_y:
+            return 90
+        elif dest_y < robot_y:
+            return 270
+        else:
+            return 0
+    elif dest_y == robot_y:
+        if dest_x > robot_x:
+            return 0
+        elif dest_x < robot_x:
+            return 180
+        else:
+            return 0
+    elif dest_x > robot_x:
         a = atan(dy/dx)
         if dest_y > robot_y:
-            return a
+            return degrees(a)
         elif dest_y <= robot_y:
-            return 360 - a
-    elif dest_x <= robot_x:
+            return 360 - degrees(a)
+    elif dest_x < robot_x:
         a = atan(dx/dy)
         if dest_y > robot_y:
-            return 90 + a
+            return 90 + degrees(a)
         elif dest_y <= robot_y:
-            return 270 - a
-
+            return 270 - degrees(a)
 def timer(func):
     import time
     def wrapper(*arg, **kw):
