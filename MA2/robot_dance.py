@@ -173,7 +173,7 @@ class Thymio:
         self.pf.set_delta(0, 0, step)
 
         while not self.pf.has_converged:
-            sleep(.2)
+            sleep(.2)  # wpakd
 
         # log.warn("Current approximated position: " +
         #          str(self.pf.position.x) + " " + str(self.pf.position.y) + " "+str(self.pf.position.angle))
