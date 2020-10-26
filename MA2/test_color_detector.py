@@ -1,9 +1,10 @@
 from color_detector import *
+from utils import show
 import pytest
 
 
 def test_wheel():
-    img = imread('./img/color_wheel.jpg')
+    img = cv2.imread('./img/color_wheel.jpg')
     output = img.copy()
     for c in MASKS.keys():
         print(" === " + c)
@@ -16,7 +17,7 @@ def test_4color_image():
     output = []
     for c in MASKS.keys():
         # print(" === " + c)
-        img = imread('./img/{}.jpg'.format(c))
+        img = cv2.imread('./img/{}.jpg'.format(c))
         bicol = apply_mask(img, MASKS[c])
         # show( bicol,c)
         detected, el = circle_detector(bicol)
@@ -34,9 +35,24 @@ def test_4color_image():
         # output = np.hstack((output, blob))
     # show(output)
 
+def test_4color_find_colored_circle():
+    colors = list(MASKS.keys())
+    colors.extend(['black', 'white'])
+    imgs = ['./img/{}.jpg'.format(c) for c in colors]
+    for f in imgs:
+        img = cv2.imread(f)
+        res = find_colored_circle(img)
+        res.sort(key=lambda x: x[1], reverse=True)
+        colors = [x[0] for x in res]
+        els = [x[2] for x in res]
+        blob = img.copy()
+        for el in els:
+            blob = cv2.ellipse(blob, el, (120, 255, 0), 5)
+        row = np.hstack((img, blob))
+        show(row, str(colors))
 
 def test_video(video_file='img/320x240.mp4'):
-    video = VideoCapture(video_file)
+    video = cv2.VideoCapture(video_file)
     if (video.isOpened() == False):
         print('Error read video')
     rgb_color = {
@@ -94,4 +110,5 @@ def test_video(video_file='img/320x240.mp4'):
 
 
 if __name__ == '__main__':
-    test_video('img/raspi_320x240.h264')
+    # test_video('img/raspi_320x240.h264')
+    test_4color_find_colored_circle()
