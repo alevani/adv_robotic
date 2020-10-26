@@ -31,14 +31,12 @@ def calculate_angular_speed_rotation(speed, degree=1, wheel_diam=9.45):
     return (sec_to_turn * degree) / 360.0
 
 
-def polar2cart(a, r):
+def polar2cart(r, a):
     a = radians(a)
     x = r * sin(a)
     y = r * cos(a)
-    try:
-        return (x[0], y[0])
-    except:
-        return (x, y)
+    print(" polar2cart :", x, y)
+    return (x, y)
 
 
 def caculate_angle_to_dest(robot_angle,
@@ -78,8 +76,11 @@ def caculate_angle_to_dest(robot_angle,
             return 90 + degrees(a)
         elif dest_y <= robot_y:
             return 270 - degrees(a)
+
+
 def timer(func):
     import time
+
     def wrapper(*arg, **kw):
         '''source: http://www.daniweb.com/code/snippet368.html'''
         t1 = time.time()
@@ -88,6 +89,7 @@ def timer(func):
         print((t2 - t1), res, func.__name__)
         return res
     return wrapper
+
 
 def get_center(cnt):
     # https://www.pyimagesearch.com/2016/02/01/opencv-center-of-contour/

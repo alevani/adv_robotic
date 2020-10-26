@@ -174,11 +174,14 @@ class Thymio:
 
         log.info(("Approx ", self.pf.position.angle))
 
+        while not self.pf.has_converged:
+            sleep(1)
+
         # log.warn("Current approximated position: " +
         #          str(self.pf.position.x) + " " + str(self.pf.position.y) + " "+str(self.pf.position.angle))
 
     def forward(self, angle):
-        dist = 1  # cm
+        dist = 0.01  # cm
         time = dist * .125
         self.aseba.SendEventName("motor.target", [200, 200])
         sleep(time)
@@ -186,8 +189,19 @@ class Thymio:
 
         step = 0.01
         #! is that correct?
-        dx, dy = polar2cart(step, angle)
-        self.pf.set_delta(dx[0][0], dy[0][0],  0)
+        print("polar to cart in ", step, angle)
+        x, y = polar2cart(step, angle)
+        print("polar to cart out ", x, y)
+        pos = self.pf.position
+        print("pf pos ", pos)
+        print("arg angle ", angle)
+        dx = pos.x - x
+        dy = pos.y - y
+        print("DX : ", dx)
+        print("DY : ", dy)
+        self.pf.set_delta(dx, dy,  0)
+        while not self.pf.has_converged:
+            sleep(1)
 
     def is_close_to_position(self, robot, pos):
         return True if abs(robot.x - pos.x) < ERROR_DISTANCE and abs(robot.y - pos.y) < ERROR_DISTANCE else False
@@ -198,13 +212,18 @@ class Thymio:
             d -= 360
         if d < -180:
             d += 360
+        print("angle diff: ", abs(d))
         return abs(d)
 
     def is_close_to_angle(self, robot_angle, angle):
+        print("is close to angle entered")
+        print(robot_angle)
+        print(angle)
         if self.angle_diff(robot_angle, angle) < 30:
             res = True
         else:
             res = False
+        print(res)
 
         # a = True if self.angle_diff(
         #   robot_angle, angle) < ERROR_ANGLE else False
@@ -218,7 +237,7 @@ class Thymio:
         except:
             pass
 
-    def goto(self, position):
+    def goto(self, dest):
         robot = self.pf.position
 
         # while True:
@@ -227,11 +246,7 @@ class Thymio:
         #     log.warn(("Approx pos: ", robot.x, robot.y, robot.angle))
 
         rotation = caculate_angle_to_dest(
-            robot.x, robot.y, robot.angle, position.x, position.y)
-
-        self.debug(robot.x, "Goto, robot.x")
-        self.debug(robot.y, "Goto, robot.y")
-        self.debug(robot.angle, "Goto, robot.angle")
+            robot.angle, robot.x, robot.y, dest.x, dest.y)
 
         # log.warn(("From ", robot.x, robot.y, robot.angle,
         #           " go to ", position.x, " ", position.y, " ", rotation))
@@ -240,17 +255,9 @@ class Thymio:
             robot = self.pf.position
             self.rotate()
 
-        self.debug(robot.x, "after while rotation, Goto, robot.x")
-        self.debug(robot.y, "after while rotation, Goto, robot.y")
-        self.debug(robot.angle, "after while rotation, Goto, robot.angle")
-
-        while not self.is_close_to_position(robot, position) and not self.hasPartner and not self.is_there_an_obstacle_ahead():
+        while not self.is_close_to_position(robot, dest) and not self.hasPartner and not self.is_there_an_obstacle_ahead():
             robot = self.pf.position
             self.forward(rotation)
-
-        self.debug(robot.x, "after while forward, Goto, robot.x")
-        self.debug(robot.y, "after while forward, Goto, robot.y")
-        self.debug(robot.angle, "after while forward, Goto, robot.angle")
 
         # if robot in front, sleep for 2sec, the mating thread is still going and does its job.
         if self.is_there_an_obstacle_ahead():
@@ -258,7 +265,7 @@ class Thymio:
             if not self.hasPartner:
                 # TODO hardcode avoidence position
                 #  Recall function to keep moving to the same marker / position
-                self.goto(position)
+                self.goto(dest)
 
     def dance(self, df):
         log.robot("Yaaah, let's go dance to ", df, "!")
@@ -297,11 +304,12 @@ if __name__ == '__main__':
         "thympi.aesl", reply_handler=dbusError, error_handler=dbusError
     )
 
-    sleep(5)
+    sleep(3)
 
     try:
         log.warn("Setting up lidar")
         lidar = Lidar()
+        sleep(2)
         log.warn("Setting up ParticleFiltering")
         pf = ParticleFiltering(lidar, asebaNetwork)
         robot = Thymio(pf, asebaNetwork)
