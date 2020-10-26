@@ -35,7 +35,6 @@ def polar2cart(r, a):
     a = radians(a)
     x = r * sin(a)
     y = r * cos(a)
-    print(" polar2cart :", x, y)
     return (x, y)
 
 

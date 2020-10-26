@@ -11,8 +11,8 @@ import sys
 
 
 WORLD = None  # gonna be defined after World
-NB_SAMPLES = 10
-NB_BEST_CANDIDATES = 5
+NB_SAMPLES = 15
+NB_BEST_CANDIDATES = 10
 NB_LIDAR_RAY = 12
 
 
@@ -120,12 +120,21 @@ def lidar_fitness(real_values: list, simulated_values: list) -> float:
 
 def create_random_sample(size=NB_SAMPLES, world=WORLD) -> list:
     candidates = []
+
     for _ in range(size):
         c = Robot(angle=randint(0, 360),
                   x=uniform(world.left_border, world.right_border),
                   y=uniform(world.bottom_border, world.top_border))
         candidates.append(c)
-    return candidates
+
+    #! to delete
+    n = []
+    for c in candidates:
+        if c.x > 0 and c.y > 0:
+            n.append(c)
+    # return candidates
+    print(n)
+    return n
 
 
 def get_best_candidates(samples,
@@ -146,9 +155,24 @@ def get_best_candidates(samples,
     return candidates[: nb_best_candidates]
 
 
+def keep_inside_world(world, x, y, a):
+    # Keeps the resampling inside the arena
+    if x > world.right_border:
+        x = world.right_border - 0.01
+    elif x < world.left_border:
+        x = world.left_border + 0.01
+
+    if y > world.top_border:
+        y = world.top_border - 0.01
+    elif y < world.bottom_border:
+        y = world.bottom_border + 0.01
+
+    return Robot(angle=a, x=x, y=y)
+
+
 def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
     '''
-    create `size` new virtual robots located around the given robot 
+    create `size` new virtual robots located around the given robot
     '''
     pos_delta = 0.03
     angle_delta = 10
@@ -158,18 +182,8 @@ def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
         y = robot.y + uniform(-pos_delta, pos_delta)
         a = (robot.angle + randint(-angle_delta, angle_delta)) % 360
 
-        # Keeps the resampling inside the arena
-        if x > world.right_border:
-            x = world.right_border - 0.01
-        elif x < world.left_border:
-            x = world.left_border + 0.01
+        new_candidates.append(keep_inside_world(world, x, y, a))
 
-        if y > world.top_border:
-            y = world.top_border - 0.01
-        elif y < world.bottom_border:
-            y = world.bottom_border + 0.01
-
-        new_candidates.append(Robot(angle=a, x=x, y=y))
     return new_candidates
 
 
@@ -179,9 +193,9 @@ class ParticleFiltering:
         self.real_lidar = real_lidar
         self.dx = 0
         self.dy = 0
+        self.nb_conv = 0
         self.da = 0
         self.aseba = n
-        self.has_converged = False
 
     def set_delta(self, dx, dy, da):
         self.has_converged = False
@@ -192,9 +206,11 @@ class ParticleFiltering:
     def move_sample(self, sample):
         new_sample = []
         for r in sample:
-            nr = Robot(angle=r.angle + self.da,
-                       x=r.x + self.dx,
-                       y=r.y + self.dy)
+
+            angle = r.angle + self.da
+            x = r.x + self.dx
+            y = r.y + self.dy
+            nr = keep_inside_world(WORLD, x, y, angle)
             new_sample.append(nr)
         self.dx = 0
         self.dy = 0
@@ -222,7 +238,7 @@ class ParticleFiltering:
                 self.position = best_candidates[0]
                 fitness = best_candidates_w_fitness[0][1]
                 self.has_converged = True
-                print("-------------------------- ", self.position, fitness)
+                print("-------------------------- Converged with fitness: ", fitness)
 
         except KeyboardInterrupt:
             sys.exit()

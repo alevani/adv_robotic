@@ -18,8 +18,8 @@ import math
 
 os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
 
-ERROR_ANGLE = 2
-ERROR_DISTANCE = 0.05
+ERROR_ANGLE = 5
+ERROR_DISTANCE = 0.10
 
 ROTATION_SLEEP_TIME = calculate_angular_speed_rotation(1)
 
@@ -63,8 +63,8 @@ class Thymio:
         self.dancefloor = [Position(.4, .3), Position(.4, -.3), Position(-.4, .3),
                            Position(-.4, -.3)]  # dancefloor position
 
-        self.markers = [Position(.98, -.60), Position(.98, .60),
-                        Position(-.98, .60), Position(-.98, -.60)]
+        self.markers = [Position(-.86, .48),
+                        Position(-.86, -.48), Position(.86, -.48), Position(.86, .48)]
 
         log.warn("Gender attribution")
         self.gender = randint(1, 2)
@@ -172,39 +172,31 @@ class Thymio:
         self.stop()
         self.pf.set_delta(0, 0, step)
 
-        log.info(("Approx ", self.pf.position.angle))
-
         while not self.pf.has_converged:
-            sleep(1)
+            sleep(.2)
 
         # log.warn("Current approximated position: " +
         #          str(self.pf.position.x) + " " + str(self.pf.position.y) + " "+str(self.pf.position.angle))
 
     def forward(self, angle):
-        dist = 0.01  # cm
-        time = dist * .125
+        time = 1 * .125
         self.aseba.SendEventName("motor.target", [200, 200])
         sleep(time)
         self.stop()
 
         step = 0.01
-        #! is that correct?
-        print("polar to cart in ", step, angle)
-        x, y = polar2cart(step, angle)
-        print("polar to cart out ", x, y)
+        x, y = polar2cart(step, angle % 360)
         pos = self.pf.position
-        print("pf pos ", pos)
-        print("arg angle ", angle)
         dx = pos.x - x
         dy = pos.y - y
-        print("DX : ", dx)
-        print("DY : ", dy)
         self.pf.set_delta(dx, dy,  0)
         while not self.pf.has_converged:
-            sleep(1)
+            sleep(.2)
 
     def is_close_to_position(self, robot, pos):
-        return True if abs(robot.x - pos.x) < ERROR_DISTANCE and abs(robot.y - pos.y) < ERROR_DISTANCE else False
+        print(robot)
+        dist = math.sqrt((robot.x-pos.x)**2 + (robot.y-pos.y)**2)
+        return True if dist < ERROR_DISTANCE else False
 
     def angle_diff(self, a, b):
         d = a - b
@@ -212,38 +204,21 @@ class Thymio:
             d -= 360
         if d < -180:
             d += 360
-        print("angle diff: ", abs(d))
         return abs(d)
 
     def is_close_to_angle(self, robot_angle, angle):
-        print("is close to angle entered")
-        print(robot_angle)
-        print(angle)
-        if self.angle_diff(robot_angle, angle) < 30:
+        if self.angle_diff(robot_angle, angle) < ERROR_ANGLE:
             res = True
         else:
             res = False
-        print(res)
 
         # a = True if self.angle_diff(
         #   robot_angle, angle) < ERROR_ANGLE else False
         return res
 
-    def debug(self, x, msg):
-        try:
-            test = x[0]
-            print(msg)
-            print(x)
-        except:
-            pass
-
     def goto(self, dest):
-        robot = self.pf.position
 
-        # while True:
-        #     sleep(0.1)
-        #     robot = self.pf.position
-        #     log.warn(("Approx pos: ", robot.x, robot.y, robot.angle))
+        robot = self.pf.position
 
         rotation = caculate_angle_to_dest(
             robot.angle, robot.x, robot.y, dest.x, dest.y)
@@ -254,10 +229,13 @@ class Thymio:
         while not self.is_close_to_angle(robot.angle, rotation) and not self.hasPartner and not self.is_there_an_obstacle_ahead():
             robot = self.pf.position
             self.rotate()
-
+        print("\n\n\n\n\n\n ANGLE REACHED \n\n\n\n\n\n")
         while not self.is_close_to_position(robot, dest) and not self.hasPartner and not self.is_there_an_obstacle_ahead():
+            print(dest)
             robot = self.pf.position
             self.forward(rotation)
+
+        print("\n\n\n\n\n\n DEST REACHED \n\n\n\n\n\n")
 
         # if robot in front, sleep for 2sec, the mating thread is still going and does its job.
         if self.is_there_an_obstacle_ahead():
