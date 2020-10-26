@@ -2,6 +2,7 @@
 
 import cv2 
 import numpy as np
+import time
 import utils
 
 
@@ -78,7 +79,7 @@ def find_contours(bicolor_img) -> list:
     return conts
 
 
-def circle_detector(bicolor_img) -> bool:
+def circle_detector(bicolor_img) -> tuple:
     min_area = 400
     contours = find_contours(bicolor_img)
     conts_w_area = [ (c, cv2.contourArea(c)) for c in contours ]
@@ -105,6 +106,40 @@ def apply_mask(bgr_img, mask_fn):
     mask = mask_fn(hsv_image)
     bicol = cv2.bitwise_and(bgr_img, bgr_img, mask=mask)
     return bicol
+
+def raspi_take_picture():
+    from picamera.array import PiRGBArray
+    from picamera import PiCamera
+    # initialize the camera and grab a reference to the raw camera capture
+    camera = PiCamera()
+    rawCapture = PiRGBArray(camera)
+    # allow the camera to warmup
+    time.sleep(0.1)
+    # grab an image from the camera
+    camera.capture(rawCapture, format="bgr")
+    image = rawCapture.array
+    # display the image on screen and wait for a keypress
+    return image
+
+def find_colored_circle(img):
+    detected_colors = []
+    for color, mask_fn in MASKS.items():
+        bicol = apply_mask(img, mask_fn)
+        is_circle, circle = circle_detector(bicol)
+        if is_circle:
+            # print(cv2.contourArea(circle))
+            area = circle[1][0] * circle[1][1] * np.pi
+            detected_colors.append((color, area, circle ))
+
+    print(detected_colors)
+    return detected_colors
+
+def find_color(img):
+    circles = find_colored_circle(img)
+    if not circles:
+        return None
+    else:
+        return circles[0][0]
 
 
 if __name__ == '__main__':

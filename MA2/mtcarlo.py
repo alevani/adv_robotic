@@ -11,7 +11,7 @@ import sys
 
 
 WORLD = None  # gonna be defined after World
-NB_SAMPLES = 10
+NB_SAMPLES = 200
 NB_BEST_CANDIDATES = 5
 NB_LIDAR_RAY = 12
 
@@ -118,15 +118,14 @@ def lidar_fitness(real_values: list, simulated_values: list) -> float:
     return np.sum(np.abs(np.subtract(real_values, simulated_values)))
 
 
-def create_random_sample(size=NB_SAMPLES, world=WORLD) -> list:
+def create_random_sample(min_angle=0, max_angle=359, size=NB_SAMPLES, world=WORLD) -> list:
     candidates = []
     for _ in range(size):
-        c = Robot(angle=randint(0, 360),
+        c = Robot(angle=randint(min_angle, max_angle) % 360,
                   x=uniform(world.left_border, world.right_border),
                   y=uniform(world.bottom_border, world.top_border))
         candidates.append(c)
     return candidates
-
 
 def get_best_candidates(samples,
                         real_robot_lidar,
@@ -173,6 +172,22 @@ def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
     return new_candidates
 
 
+
+def determine_min_max_angle_from_color(color: str) -> tuple:
+    # blue | yellow
+    # -----+-------
+    # green| red
+     
+    m = 10 # margin
+    color_angle = {
+        'yellow': ( -45 + m, 135 - m),
+        'blue':   (  45 + m, 225 - m),
+        'green':  ( 135 + m, 315 - m),
+        'red':    (-135 + m,  45 - m),
+        }
+    return color_angle[color]
+
+
 class ParticleFiltering:
     def __init__(self, real_lidar: Lidar, n=None):
         self.position = None
@@ -211,7 +226,42 @@ class ParticleFiltering:
                 # print(real_robot_lidar)
 
                 best_candidates_w_fitness = get_best_candidates(sample, real_robot_lidar)
-                best_candidates = [ x[0] for x in best_candidates_w_fitness ]
+                best_candidates = [x[0] for x in best_candidates_w_fitness]
+                new_candidates = []
+
+                for virtual_robot in best_candidates:
+                    cs = resample_around(virtual_robot)
+                    new_candidates.extend(cs)
+
+                sample = new_candidates
+                self.position = best_candidates[0]
+                fitness = best_candidates_w_fitness[0][1]
+                print(self.position, fitness)
+
+        except KeyboardInterrupt:
+            sys.exit()
+
+
+    def localise_with_color(self):
+        from color_detector import find_color, raspi_take_picture
+        # img = raspi_take_picture()
+        # color = find_color(img)
+        color = 'yellow'
+        if not color:
+            # turn until finds a color
+            pass
+        min_angle, max_angle = determine_min_max_angle_from_color(color)
+        print("max_angle", max_angle)
+        print("min_angle", min_angle)
+        sample = create_random_sample(min_angle, max_angle)
+        try:
+            while True:
+                sample = self.move_sample(sample)
+                real_robot_lidar = self.real_lidar.get_scan_data()
+                # print(real_robot_lidar)
+
+                best_candidates_w_fitness = get_best_candidates(sample, real_robot_lidar)
+                best_candidates = [x[0] for x in best_candidates_w_fitness]
                 new_candidates = []
 
                 for virtual_robot in best_candidates:
@@ -260,12 +310,12 @@ class ParticleFiltering:
 if __name__ == '__main__':
     from Lidar import FakeLidar
     import threading
-    fake_lidar = FakeLidar(Robot(x=0.80, y=0.30, angle=90))
+    fake_lidar = FakeLidar(Robot(x=0, y=0, angle=270))
     print(fake_lidar.get_scan_data())
     pf = ParticleFiltering(fake_lidar)
     # pf.localise()
     # scanner_thread = threading.Thread(target=pf.localise)
-    scanner_thread = threading.Thread(target=pf.localise)
+    scanner_thread = threading.Thread(target=pf.localise_with_color)
     scanner_thread.start()
     while True:
         cmd = input('command')
