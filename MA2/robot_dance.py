@@ -173,7 +173,7 @@ class Thymio:
         self.pf.set_delta(0, 0, step)
 
         while not self.pf.has_converged:
-            sleep(.2)  # wpakd
+            sleep(.2)
 
         # log.warn("Current approximated position: " +
         #          str(self.pf.position.x) + " " + str(self.pf.position.y) + " "+str(self.pf.position.angle))
@@ -185,11 +185,9 @@ class Thymio:
         self.stop()
 
         step = 0.01
-        x, y = polar2cart(step, angle % 360)
-        pos = self.pf.position
-        dx = pos.x - x
-        dy = pos.y - y
+        dx, dy = polar2cart(step, angle)
         self.pf.set_delta(dx, dy,  0)
+
         while not self.pf.has_converged:
             sleep(.2)
 
