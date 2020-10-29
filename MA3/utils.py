@@ -18,7 +18,7 @@ class Position:
     def __init__(self, x, y, a):
         self.x = x
         self.y = y
-        self.y = y
+        self.a = a
 
 
 def distance(s, x, y):

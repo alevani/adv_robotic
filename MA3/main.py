@@ -13,6 +13,7 @@ lr = 0  # up to 1
 # Initialize q-table values to 0
 Q = np.zeros((state_size, action_size))
 
+# action = 0 = for
 
 Q[state, action] = Q[state, action] + lr * (reward + gamma * np.max(Q[new_state, :]) — Q[state, action])
 

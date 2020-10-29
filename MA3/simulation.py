@@ -56,12 +56,6 @@ def simulationstep():
 file = open("trajectory.dat", "w")
 
 
-def return_inter(alpha, x, y, world):
-    ray = LineString([(x, y + 0.0778), (x+cos(alpha)*2*W, (y+sin(alpha)*2*H))])
-    s = world.intersection(ray)
-    return sqrt((s.x-x)**2+(s.y-y)**2)
-
-
 def create_rays(pos, robot_position):
     x = pos.x + robot_position.x
     y = pos.y + robot_position.y
@@ -86,19 +80,18 @@ for cnt in range(5000):
     #     [(x + 0.025, y + 0.025), (x+cos(q)*2*W, (y+sin(q - 18.5)*2*H))])
 
     rays = [create_rays(pos, robot_position) for pos in sensors_position]
-    sensors_values = [distance(world.intersection(ray)) for ray in rays]
+    sensors_values = [distance(world.intersection(ray), x, y) for ray in rays]
 
     top = sensors_values[2]
-    leftest = sensors_values[0]
-    left = sensors_values[1]
-    right = sensors_values[3]
-    rightest = sensors_values[4]
+    # leftest = sensors_values[0]
+    # left = sensors_values[1]
+    # right = sensors_values[3]
+    # rightest = sensors_values[4]
 
-    if (top < 0.05):
+    # Within range, like real life robot
+    if (top < 0.10):
         left_wheel_velocity = -0.4
         right_wheel_velocity = 0.4
-    elif:
-        pass
     else:
         if cnt % 100 == 0:
             left_wheel_velocity = random()
