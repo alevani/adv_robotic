@@ -1,9 +1,18 @@
 import shapely
 from shapely.geometry import LinearRing, LineString, Point, Polygon
-from numpy import sin, cos, pi, sqrt
+from numpy import sin, cos, pi, sqrt, zeros
+import numpy as np
 from random import *
 from utils import Position
 from utils import distance
+
+epsilon = 0.5  # up to 1
+gamma = 0.8  # up to 0.99
+lr = 1  # up to 1
+
+actions = [(0.4, 0.4), (-0.4, 0.4), (-0.4, 0.4), (0.4, -0.4)]
+Q = zeros((2, 4))
+
 
 # A prototype simulation of a differential-drive robot with one sensor
 
@@ -22,12 +31,6 @@ simulation_timestep = 0.01
 # the world is a rectangular arena with width W and height H
 world = LinearRing([(W/2, H/2), (-W/2, H/2), (-W/2, -H/2), (W/2, -H/2)])
 
-#! place it in the middle so half width half height
-#! Might already be the middle?
-x = 0.0   # robot position in meters - x direction - positive to the right
-y = 0.0   # robot position in meters - y direction - positive up
-q = 0.0   # robot heading with respect to x-axis in radians
-
 left_wheel_velocity = random()   # robot left wheel velocity in radians/s
 right_wheel_velocity = random()  # robot right wheel velocity in radians/s
 
@@ -35,6 +38,8 @@ right_wheel_velocity = random()  # robot right wheel velocity in radians/s
 #################
 # updates robot position and heading based on velocity of wheels and the elapsed time
 # the equations are a forward kinematic model of a two-wheeled robot - don't worry just use it
+
+#! induire que les murs sont bien reeles
 
 
 def simulationstep():
@@ -66,46 +71,86 @@ def create_rays(pos, robot_position):
 # Order is : Top, left most, second to left, second to right, right most
 sensors_position = [Position(-0.05, 0.06, 40), Position(-0.025,
                                                         0.075, 18.5), Position(0, 0.0778, 0), Position(0.05, 0.06, -40), Position(0.025, 0.025, -18.5)]
-for cnt in range(5000):
-    robot_position = Position(x, y, q)
 
-    # ray = LineString([(x, y + 0.0778), (x+cos(q)*2*W, (y+sin(q)*2*H))])
-    # ray1 = LineString(
-    #     [(x - 0.05, y + 0.06), (x+cos(q + 40)*2*W, (y+sin(q + 40)*2*H))])
-    # ray2 = LineString(
-    #     [(x - 0.025, y + 0.075), (x+cos(q + 18.5)*2*W, (y+sin(q + 18.5)*2*H))])
-    # ray3 = LineString(
-    #     [(x + 0.05, y + 0.06), (x+cos(q)*2*W, (y+sin(q - 40)*2*H))])
-    # ray4 = LineString(
-    #     [(x + 0.025, y + 0.025), (x+cos(q)*2*W, (y+sin(q - 18.5)*2*H))])
 
-    rays = [create_rays(pos, robot_position) for pos in sensors_position]
-    sensors_values = [distance(world.intersection(ray), x, y) for ray in rays]
-
-    top = sensors_values[2]
-    # leftest = sensors_values[0]
-    # left = sensors_values[1]
-    # right = sensors_values[3]
-    # rightest = sensors_values[4]
-
-    # Within range, like real life robot
-    if (top < 0.10):
-        left_wheel_velocity = -0.4
-        right_wheel_velocity = 0.4
+def get_state(top):
+    if top < 0.3:
+        return 0
     else:
-        if cnt % 100 == 0:
-            left_wheel_velocity = random()
-            right_wheel_velocity = random()
+        return 1
 
-    # step simulation
-    simulationstep()
 
-    # check collision with arena walls
-    if (world.distance(Point(x, y)) < L/2):
-        break
+action_index = 0
+state = 1
+for i in range(0, 10):
+    print("Epoch: ", i)
+    #! place it in the middle so half width half height
+    #! Might already be the middle?
+    x = 0.0   # robot position in meters - x direction - positive to the right
+    y = 0.0   # robot position in meters - y direction - positive up
+    q = 0.0   # robot heading with respect to x-axis in radians
+    for cnt in range(5000):
+        robot_position = Position(x, y, q)
 
-    if cnt % 50 == 0:
-        file.write(str(x) + ", " + str(y) + ", " +
-                   str(cos(q)*0.05) + ", " + str(sin(q)*0.05) + "\n")
+        rays = [create_rays(pos, robot_position)
+                for pos in sensors_position]
+        sensors_values = [
+            distance(world.intersection(ray), x, y) for ray in rays]
+
+        top = sensors_values[2]
+        # leftest = sensors_values[0]
+        # left = sensors_values[1]
+        # right = sensors_values[3]
+        # rightest = sensors_values[4]
+
+        new_state = get_state(top)
+        if new_state == 0:
+            reward = -10
+        else:
+            reward = 20
+
+        Q[state, action_index] = Q[state, action_index] + lr * \
+            (reward + gamma *
+             np.max(Q[new_state, :]) - Q[state, action_index])
+
+        # Set the percent you want to explore
+        action_index = None
+        state = new_state
+
+        if uniform(0, 1) < epsilon:
+            """
+            Explore: select a random action
+            """
+            action_index = randint(0, 3)
+            action = actions[action_index]
+            left_wheel_velocity = action[0]
+            right_wheel_velocity = action[1]
+        else:
+            """
+            Exploit: select the action with max value (future reward)
+            """
+
+            action_index = np.argmax(Q[state])
+            action = actions[action_index]
+
+            left_wheel_velocity = action[0]
+            right_wheel_velocity = action[1]
+
+        # step simulation
+        simulationstep()
+
+        # check collision with arena walls
+        if (world.distance(Point(x + 0.0778, y)) < L/2):
+            print("collided")
+            break
+
+        # if cnt % 50 == 0:
+        #     file.write(str(x) + ", " + str(y) + ", " + str(q) + "\n")
+        if cnt % 50 == 0:
+            # print(Q)
+            file.write(str(x) + ", " + str(y) + ", " +
+                       str(cos(q)*0.05) + ", " + str(sin(q)*0.05) + "\n")
+    print(Q)
+
 
 file.close()
