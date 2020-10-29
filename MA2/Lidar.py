@@ -1,4 +1,3 @@
-from adafruit_rplidar import RPLidar
 import threading
 from math import floor
 from log import Logger
@@ -8,6 +7,7 @@ NB_STOP = 12
 
 class Lidar:
     def __init__(self, nb_stop=NB_STOP):
+        from adafruit_rplidar import RPLidar
         self.log = Logger()
         self.nb_stop = nb_stop
         self.nb_samples = int(360 / nb_stop)

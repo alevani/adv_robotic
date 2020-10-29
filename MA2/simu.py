@@ -79,7 +79,7 @@ def draw_arena(screen):
     pygame.draw.circle(screen, red,    (arena_w+margin_w ,arena_h+margin_h), 20)
 
 
-def simulate(screen):
+def simulate(screen, robots):
     robots = [((100, 100), 57), ((200,200), 180)]
     from time import sleep
     draw_arena(screen)
@@ -106,5 +106,12 @@ def game_loop():
         pygame.display.flip() # render drawing
         fpsClock.tick(fps)
 
+def read_file(path):
+    with open(path, 'r') as f:
+        lines = f.readlines()
+    lines = [ x.split(',') for x in lines ] # x,y,a in radians
+    print(lines)
+
 if __name__ == "__main__":
+    coors = read_file('trajectory.dat')
     game_loop()

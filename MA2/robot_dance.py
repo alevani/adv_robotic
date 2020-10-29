@@ -187,8 +187,8 @@ class Thymio:
         step = 0.01
         x, y = polar2cart(step, angle % 360)
         pos = self.pf.position
-        dx = pos.x - x
-        dy = pos.y - y
+        dx = pos.x + x
+        dy = pos.y + y
         self.pf.set_delta(dx, dy,  0)
         while not self.pf.has_converged:
             sleep(.2)

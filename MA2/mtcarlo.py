@@ -1,5 +1,4 @@
 
-from Lidar import Lidar
 from dataclasses import dataclass
 from math import radians, cos, sin, sqrt
 from random import randint, uniform
@@ -155,7 +154,7 @@ def get_best_candidates(samples,
     return candidates[: nb_best_candidates]
 
 
-def keep_inside_world(world, x, y, a):
+def keep_inside_world(world, x, y):
     # Keeps the resampling inside the arena
     if x > world.right_border:
         x = world.right_border - 0.01
@@ -167,7 +166,7 @@ def keep_inside_world(world, x, y, a):
     elif y < world.bottom_border:
         y = world.bottom_border + 0.01
 
-    return Robot(angle=a, x=x, y=y)
+    return x, y
 
 
 def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
@@ -182,7 +181,9 @@ def resample_around(robot, size=NB_BEST_CANDIDATES, world=WORLD):
         y = robot.y + uniform(-pos_delta, pos_delta)
         a = (robot.angle + randint(-angle_delta, angle_delta)) % 360
 
-        new_candidates.append(keep_inside_world(world, x, y, a))
+        nx, ny = keep_inside_world(world, x, y)
+        r = Robot(x=nx, y=ny, angle=a)
+        new_candidates.append(r)
 
     return new_candidates
 
@@ -203,7 +204,7 @@ def determine_min_max_angle_from_color(color: str) -> tuple:
 
 
 class ParticleFiltering:
-    def __init__(self, real_lidar: Lidar, n=None):
+    def __init__(self, real_lidar, n=None):
         self.position = None
         self.real_lidar = real_lidar
         self.dx = 0
@@ -225,7 +226,8 @@ class ParticleFiltering:
             angle = r.angle + self.da
             x = r.x + self.dx
             y = r.y + self.dy
-            nr = keep_inside_world(WORLD, x, y, angle)
+            nx, ny = keep_inside_world(WORLD, x, y)
+            nr = Robot(x=nx, y=ny, angle=angle)
             new_sample.append(nr)
         self.dx = 0
         self.dy = 0
@@ -253,6 +255,8 @@ class ParticleFiltering:
                 self.position = best_candidates[0]
                 fitness = best_candidates_w_fitness[0][1]
                 print(self.position, fitness)
+                self.has_converged = True
+                print("-------------------------- Converged with fitness: ", fitness)
 
         except KeyboardInterrupt:
             sys.exit()
@@ -288,7 +292,7 @@ class ParticleFiltering:
                 self.position = best_candidates[0]
                 fitness = best_candidates_w_fitness[0][1]
                 self.has_converged = True
-                print("-------------------------- Converged with fitness: ", fitness)
+                print("----------------------- Converged to: {} with fitness: {:2.3f}".format(self.position, fitness))
 
         except KeyboardInterrupt:
             sys.exit()
@@ -308,3 +312,6 @@ if __name__ == '__main__':
         cmd = input('command')
         if cmd == 'print':
             print()
+
+else:
+    from Lidar import Lidar
