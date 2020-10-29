@@ -8,9 +8,13 @@ dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 bus = dbus.SessionBus()
 asebaNetworkObject = bus.get_object("ch.epfl.mobots.Aseba", "/")
 
-gender = randint(1, 2)
-gender = 2
+PURPLE = [255, 0, 255]
+RED = [255, 0, 0]
+BLUE = [0, 0, 255]
+WHITE = [255, 255, 255]
 
+gender = randint(1, 2)
+set_color(RED if gender == 1 else BLUE)
 
 asebaNetwork = dbus.Interface(
     asebaNetworkObject, dbus_interface="ch.epfl.mobots.AsebaNetwork"
@@ -26,6 +30,10 @@ asebaNetwork.LoadScripts(
 )
 
 
+def set_color(color):
+    asebaNetwork.SendEventName("led.top", color)
+
+
 def startCommunication():
     asebaNetwork.SendEventName("prox.comm.enable", [1])
     asebaNetwork.SendEventName("prox.comm.rx", [0])
@@ -33,7 +41,7 @@ def startCommunication():
 
 def sendInformation():
     asebaNetwork.SendEventName("prox.comm.tx", [gender])
-    print("SENT : Gender")
+    print("SENT : Gender ", gender)
     threading.Timer(.1, sendInformation).start()
 
 
