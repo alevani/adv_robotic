@@ -22,4 +22,10 @@ class Position:
 
 
 def distance(s, x, y):
-    return sqrt((s.x-x)**2+(s.y-y)**2)
+    try:
+        return sqrt((s.x-x)**2+(s.y-y)**2)
+    except:
+        # print(s)
+        # print(y)
+        # print(x)
+        return 0
