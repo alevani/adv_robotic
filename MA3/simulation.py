@@ -1,9 +1,12 @@
 import shapely
 from shapely.geometry import LinearRing, LineString, Point, Polygon
-from numpy import sin, cos, pi, sqrt
+from numpy import sin, cos, pi, sqrt, zeros
+import math
+import numpy as np
 from random import *
 from utils import Position
 from utils import distance
+
 
 # A prototype simulation of a differential-drive robot with one sensor
 
@@ -12,100 +15,188 @@ from utils import distance
 R = 0.02  # radius of wheels in meters
 L = 0.095  # distance between wheels in meters
 
-W = 1.18  # width of arena
-H = 1.94  # height of arena
+W = 1.94  # width of arena
+H = 1.18  # height of arena
+SPEED = 0.5
+ACTIONS = [(SPEED, SPEED), (-SPEED, SPEED), (SPEED, -SPEED), (-SPEED, -SPEED)]
 
-robot_timestep = 0.1        # 1/robot_timestep equals update frequency of robot
+ROBOT_TIMESTEP = 0.1        # 1/ROBOT_TIMESTEP equals update frequency of robot
 # timestep in kinematics< sim (probably don't touch..)
-simulation_timestep = 0.01
+SIMULATION_TIMESTEP = .001
 
-# the world is a rectangular arena with width W and height H
-world = LinearRing([(W/2, H/2), (-W/2, H/2), (-W/2, -H/2), (W/2, -H/2)])
+# the WORLD is a rectangular arena with width W and height H
+WORLD = LinearRing([(W/2, H/2), (-W/2, H/2), (-W/2, -H/2), (W/2, -H/2)])
 
-#! place it in the middle so half width half height
-#! Might already be the middle?
-x = 0.0   # robot position in meters - x direction - positive to the right
-y = 0.0   # robot position in meters - y direction - positive up
-q = 0.0   # robot heading with respect to x-axis in radians
-
-left_wheel_velocity = random()   # robot left wheel velocity in radians/s
-right_wheel_velocity = random()  # robot right wheel velocity in radians/s
-
-# Kinematic model
-#################
-# updates robot position and heading based on velocity of wheels and the elapsed time
-# the equations are a forward kinematic model of a two-wheeled robot - don't worry just use it
+SENSORS_POSITION = [Position(-0.05, 0.06, math.radians(40)), Position(-0.025,
+                                                                      0.075, math.radians(18.5)), Position(0, 0.0778, math.radians(0)), Position(0.05, 0.06, math.radians(-40)), Position(0.025, 0.025, math.radians(-18.5))]
 
 
-def simulationstep():
-    global x, y, q
+FILE = open("trajectory.dat", "w")
 
+
+def simulationstep(x, y, q, left_wheel_velocity, right_wheel_velocity):
     # step model time/timestep times
-    for step in range(int(robot_timestep/simulation_timestep)):
+    for step in range(int(ROBOT_TIMESTEP/SIMULATION_TIMESTEP)):
         v_x = cos(q)*(R*left_wheel_velocity/2 + R*right_wheel_velocity/2)
         v_y = sin(q)*(R*left_wheel_velocity/2 + R*right_wheel_velocity/2)
         omega = (R*right_wheel_velocity - R*left_wheel_velocity)/(2*L)
 
-        x += v_x * simulation_timestep
-        y += v_y * simulation_timestep
-        q += omega * simulation_timestep
-
-
-# Simulation loop
-#################
-file = open("trajectory.dat", "w")
+        x += v_x * SIMULATION_TIMESTEP
+        y += v_y * SIMULATION_TIMESTEP
+        q += omega * SIMULATION_TIMESTEP
+    return x, y, q
 
 
 def create_rays(pos, robot_position):
-    x = pos.x + robot_position.x
-    y = pos.y + robot_position.y
-    a = pos.a + robot_position.a
-    return LineString([(x, y), (x+cos(q)*2*W, (y+sin(q)*2*H))])
+    nx = pos.x + robot_position.x
+    ny = pos.y + robot_position.y
+    na = pos.a + robot_position.a
+    return LineString([(nx, ny), (nx+cos(na)*2*W, (ny+sin(na)*2*H))])
 
 
-# Order is : Top, left most, second to left, second to right, right most
-sensors_position = [Position(-0.05, 0.06, 40), Position(-0.025,
-                                                        0.075, 18.5), Position(0, 0.0778, 0), Position(0.05, 0.06, -40), Position(0.025, 0.025, -18.5)]
-for cnt in range(5000):
-    robot_position = Position(x, y, q)
-
-    # ray = LineString([(x, y + 0.0778), (x+cos(q)*2*W, (y+sin(q)*2*H))])
-    # ray1 = LineString(
-    #     [(x - 0.05, y + 0.06), (x+cos(q + 40)*2*W, (y+sin(q + 40)*2*H))])
-    # ray2 = LineString(
-    #     [(x - 0.025, y + 0.075), (x+cos(q + 18.5)*2*W, (y+sin(q + 18.5)*2*H))])
-    # ray3 = LineString(
-    #     [(x + 0.05, y + 0.06), (x+cos(q)*2*W, (y+sin(q - 40)*2*H))])
-    # ray4 = LineString(
-    #     [(x + 0.025, y + 0.025), (x+cos(q)*2*W, (y+sin(q - 18.5)*2*H))])
-
-    rays = [create_rays(pos, robot_position) for pos in sensors_position]
-    sensors_values = [distance(world.intersection(ray), x, y) for ray in rays]
-
+def get_state(sensors_values):
     top = sensors_values[2]
-    # leftest = sensors_values[0]
-    # left = sensors_values[1]
-    # right = sensors_values[3]
-    # rightest = sensors_values[4]
+    leftest = sensors_values[0]
+    left = sensors_values[1]
+    right = sensors_values[3]
+    rightest = sensors_values[4]
 
-    # Within range, like real life robot
-    if (top < 0.10):
-        left_wheel_velocity = -0.4
-        right_wheel_velocity = 0.4
+    print(sensors_values)
+
+    if top < 0.10 and leftest < 0.06:
+        return 2
+    elif top < 0.10 and rightest < 0.06:
+        return 3
+    elif top < 0.06:
+        return 0
     else:
-        if cnt % 100 == 0:
-            left_wheel_velocity = random()
-            right_wheel_velocity = random()
+        return 1
 
-    # step simulation
-    simulationstep()
 
-    # check collision with arena walls
-    if (world.distance(Point(x, y)) < L/2):
-        break
+def is_colliding(x, y):
+    return WORLD.distance(Point(x + 0.0778, y)) < 0.005
 
-    if cnt % 50 == 0:
-        file.write(str(x) + ", " + str(y) + ", " +
-                   str(cos(q)*0.05) + ", " + str(sin(q)*0.05) + "\n")
 
-file.close()
+def train(epoch, epsilon, gamma, lr):
+    global Q
+
+    print("----------\n\n\n TRAINING \n\n\n----------")
+
+    left_wheel_velocity = SPEED   # robot left wheel velocity in radians/s
+    right_wheel_velocity = SPEED  # robot right wheel velocity in radians/s
+    for i in range(0, epoch):
+        print("Epoch: ", i)
+        x = 0.0   # robot position in meters - x direction - positive to the right
+        y = 0.0   # robot position in meters - y direction - positive up
+        # robot heading with respect to x-axis in radians
+        q = math.radians(90.0)
+        action_index = 0
+        state = 1
+        for cnt in range(10000):
+            robot_position = Position(x, y, q)
+
+            rays = [create_rays(pos, robot_position)
+                    for pos in SENSORS_POSITION]
+            sensors_values = [
+                distance(WORLD.intersection(ray), x, y) for ray in rays]
+
+            new_state = get_state(sensors_values)
+
+            if new_state == 0:
+                reward = -30
+            elif new_state == 2:
+                reward = 30
+            elif new_state == 3:
+                reward = 30
+            elif new_state == 1:
+                reward = 100
+
+            Q[state, action_index] = Q[state, action_index] + lr * \
+                (reward + gamma *
+                    np.max(Q[new_state, :]) - Q[state, action_index])
+
+            # Set the percent you want to explore
+            action_index = None
+            state = new_state
+
+            if uniform(0, 1) < epsilon:
+                """
+                Explore: select a random action
+                """
+                action_index = randint(0, 3)
+            else:
+                """
+                Exploit: select the action with max value (future reward)
+                """
+                action_index = np.argmax(Q[state])
+
+            action = ACTIONS[action_index]
+            action = ACTIONS[0]
+
+            left_wheel_velocity = action[0]
+            right_wheel_velocity = action[1]
+
+            # step simulation
+            x, y, q = simulationstep(
+                x, y, q, left_wheel_velocity, right_wheel_velocity)
+
+            # check collision with arena walls
+            if is_colliding(x, y):
+                print(x, y)
+                print("collided")
+                print(WORLD.distance(Point(x, y)))
+                print("\n\n\n")
+                break
+        print(Q)
+
+
+def run():
+    global Q
+    x = 0.0   # robot position in meters - x direction - positive to the right
+    y = 0.0   # robot position in meters - y direction - positive up
+    # robot heading with respect to x-axis in radians
+    q = math.radians(90.0)
+    print("----------\n\n\n RUNNING \n\n\n----------")
+    for cnt in range(10000):
+        robot_position = Position(x, y, q)
+
+        rays = [create_rays(pos, robot_position)
+                for pos in SENSORS_POSITION]
+        sensors_values = [
+            distance(WORLD.intersection(ray), x, y) for ray in rays]
+
+        state = get_state(sensors_values)
+
+        action_index = np.argmax(Q[state])
+        action = ACTIONS[action_index]
+
+        left_wheel_velocity = action[0]
+        right_wheel_velocity = action[1]
+
+        # step simulation
+        x, y, q = simulationstep(
+            x, y, q, left_wheel_velocity, right_wheel_velocity)
+
+        # check collision with arena walls
+        if is_colliding(x, y):
+            print(x, y)
+            print("collided")
+            print(WORLD.distance(Point(x, y)))
+            print("\n\n\n")
+            break
+
+        if cnt % 30 == 0:
+            FILE.write(str(x) + ", " + str(y) + ", " +
+                       str(cos(q)*0.05) + ", " + str(sin(q)*0.05) + "\n")
+
+
+epoch = 10
+epsilon = 0.3  # up to 1
+gamma = 0.8  # up to 0.99
+lr = 0.7  # up to 1
+
+Q = zeros((4, 4))
+
+train(epoch, epsilon, gamma, lr)
+run()
+FILE.close()

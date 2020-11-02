@@ -1,9 +1,9 @@
 import numpy as np
 import random
+from utils import State
+from utils import Action
 
 # Globals
-LEARNING_RATE = 1
-DISCOUNT = 1
 state_size = 0
 action_size = 0
 epsilon = 0.2  # up to 1
@@ -14,6 +14,8 @@ lr = 0  # up to 1
 Q = np.zeros((state_size, action_size))
 
 # action = 0 = for
+
+# forward = Action(200, 200)
 
 Q[state, action] = Q[state, action] + lr * (reward + gamma * np.max(Q[new_state, :]) — Q[state, action])
 
