@@ -2,6 +2,7 @@ import shapely
 from shapely.geometry import LinearRing, LineString, Point, Polygon
 from numpy import sin, cos, pi, sqrt, zeros
 import math
+import sys
 import numpy as np
 from random import *
 from utils import Position
@@ -28,7 +29,7 @@ SIMULATION_TIMESTEP = .001
 WORLD = LinearRing([(W/2, H/2), (-W/2, H/2), (-W/2, -H/2), (W/2, -H/2)])
 
 SENSORS_POSITION = [Position(-0.05, 0.06, math.radians(40)), Position(-0.025,
-                                                                      0.075, math.radians(18.5)), Position(0, 0.0778, math.radians(0)), Position(0.05, 0.06, math.radians(-40)), Position(0.025, 0.025, math.radians(-18.5))]
+                                                                      0.075, math.radians(18.5)), Position(0, 0.0778, math.radians(0)), Position(0.025, 0.025, math.radians(-18.5)), Position(0.05, 0.06, math.radians(-40))]
 
 
 FILE = open("trajectory.dat", "w")
@@ -55,13 +56,12 @@ def create_rays(pos, robot_position):
 
 
 def get_state(sensors_values):
+    print(sensors_values)
     top = sensors_values[2]
     leftest = sensors_values[0]
     left = sensors_values[1]
     right = sensors_values[3]
     rightest = sensors_values[4]
-
-    print(sensors_values)
 
     if top < 0.10 and leftest < 0.06:
         return 2
@@ -74,7 +74,11 @@ def get_state(sensors_values):
 
 
 def is_colliding(x, y):
-    return WORLD.distance(Point(x + 0.0778, y)) < 0.005
+    # should be box collision
+    Polygon(((x - 0.0725, y - 0.0525), (x - 0.0725, y + 0.0525),
+             (x + 0.0725, y + 0.0525), (x + 0.0725, y - 0.0525)))
+
+    return WORLD.distance(Point(x, y)) < 0.005
 
 
 def train(epoch, epsilon, gamma, lr):
@@ -96,9 +100,11 @@ def train(epoch, epsilon, gamma, lr):
             robot_position = Position(x, y, q)
 
             rays = [create_rays(pos, robot_position)
-                    for pos in SENSORS_POSITION]
+                    for pos in SENSORS_POSITION]  # ! Might be a problem. imagine if robot is (0,0,180) and then you add
+            #! sensors positions, would the ray be pointing at 180°?
+
             sensors_values = [
-                distance(WORLD.intersection(ray), x, y) for ray in rays]
+                distance(WORLD.intersection(ray), x + SENSORS_POSITION[index].x, y + SENSORS_POSITION[index].y) for index, ray in enumerate(rays)]  # ! same problem as above?
 
             new_state = get_state(sensors_values)
 
@@ -120,14 +126,8 @@ def train(epoch, epsilon, gamma, lr):
             state = new_state
 
             if uniform(0, 1) < epsilon:
-                """
-                Explore: select a random action
-                """
                 action_index = randint(0, 3)
             else:
-                """
-                Exploit: select the action with max value (future reward)
-                """
                 action_index = np.argmax(Q[state])
 
             action = ACTIONS[action_index]
@@ -146,17 +146,19 @@ def train(epoch, epsilon, gamma, lr):
                 print("collided")
                 print(WORLD.distance(Point(x, y)))
                 print("\n\n\n")
+                sys.exit(0)
                 break
         print(Q)
 
 
 def run():
     global Q
+    print("----------\n\n\n RUNNING \n\n\n----------")
+
     x = 0.0   # robot position in meters - x direction - positive to the right
     y = 0.0   # robot position in meters - y direction - positive up
     # robot heading with respect to x-axis in radians
     q = math.radians(90.0)
-    print("----------\n\n\n RUNNING \n\n\n----------")
     for cnt in range(10000):
         robot_position = Position(x, y, q)
 
