@@ -4,6 +4,7 @@ from numpy import sin, cos, pi, sqrt, zeros
 import math
 import sys
 import numpy as np
+import json
 from random import *
 from utils import Position
 from utils import distance
@@ -28,8 +29,11 @@ SIMULATION_TIMESTEP = .001
 # the WORLD is a rectangular arena with width W and height H
 WORLD = LinearRing([(W/2, H/2), (-W/2, H/2), (-W/2, -H/2), (W/2, -H/2)])
 
-SENSORS_POSITION = [Position(-0.05, 0.06, math.radians(40)), Position(-0.025,
-                                                                      0.075, math.radians(18.5)), Position(0, 0.0778, math.radians(0)), Position(0.025, 0.025, math.radians(-18.5)), Position(0.05, 0.06, math.radians(-40))]
+SENSORS_POSITION = [Position( -0.05,   0.06, math.radians(40)),
+                    Position(-0.025,  0.075, math.radians(18.5)),
+                    Position(     0, 0.0778, math.radians(0)),
+                    Position( 0.025,  0.025, math.radians(-18.5)),
+                    Position(  0.05,   0.06, math.radians(-40))]
 
 
 FILE = open("trajectory.dat", "w")
@@ -56,7 +60,7 @@ def create_rays(pos, robot_position):
 
 
 def get_state(sensors_values):
-    print(sensors_values)
+    # print(sensors_values)
     top = sensors_values[2]
     leftest = sensors_values[0]
     left = sensors_values[1]
@@ -84,23 +88,43 @@ def is_colliding(x, y):
 def train(epoch, epsilon, gamma, lr):
     global Q
 
-    print("----------\n\n\n TRAINING \n\n\n----------")
+    # print("----------\n\n\n TRAINING \n\n\n----------")
 
     left_wheel_velocity = SPEED   # robot left wheel velocity in radians/s
     right_wheel_velocity = SPEED  # robot right wheel velocity in radians/s
     for i in range(0, epoch):
-        print("Epoch: ", i)
-        x = 0.0   # robot position in meters - x direction - positive to the right
-        y = 0.0   # robot position in meters - y direction - positive up
+        # print("Epoch: ", i)
+        x = 0.3   # robot position in meters - x direction - positive to the right
+        y = 0.5   # robot position in meters - y direction - positive up
         # robot heading with respect to x-axis in radians
-        q = math.radians(90.0)
+        q = math.radians(45)
         action_index = 0
         state = 1
+        pygame_drawings = [] 
         for cnt in range(10000):
+            robot_draw = {
+                'rpos': [],
+                'spos': []
+            }
             robot_position = Position(x, y, q)
+            robot_draw['rpos'] = robot_position.__dict__ # use __dict__ to make it jsonable
+            rays = []
+            # create rays
+            for i, spos in enumerate(SENSORS_POSITION):
+                # nx = spos.x + robot_position.x
+                # ny = spos.y + robot_position.y
+                na = (spos.a + robot_position.a ) % 360
+                start_ray = (robot_position.x, robot_position.y)
+                end_ray = (robot_position.x + cos(na)*2*W,
+                           robot_position.y + sin(na)*2*H)
+                robot_draw['spos'].append((start_ray, end_ray))
+                ray = LineString([start_ray, end_ray])
+                rays.append(ray)
+            print(robot_draw)
+            print(json.dumps(robot_draw))
 
-            rays = [create_rays(pos, robot_position)
-                    for pos in SENSORS_POSITION]  # ! Might be a problem. imagine if robot is (0,0,180) and then you add
+            # rays = [create_rays(pos, robot_position)
+            #         for pos in SENSORS_POSITION]  # ! Might be a problem. imagine if robot is (0,0,180) and then you add
             #! sensors positions, would the ray be pointing at 180°?
 
             sensors_values = [

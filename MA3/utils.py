@@ -20,6 +20,9 @@ class Position:
         self.y = y
         self.a = a
 
+    def __repr__(self):
+        return "({}, {}, {})".format(self.x, self.y, self.a)
+
 
 def distance(s, x, y):
     return sqrt((s.x-x)**2+(s.y-y)**2)
