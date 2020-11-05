@@ -1,4 +1,5 @@
 import shapely
+from shapely.affinity import rotate
 from shapely.geometry import LinearRing, LineString, Point, Polygon
 from numpy import sin, cos, pi, sqrt, zeros
 import math
@@ -66,23 +67,30 @@ def get_state(sensors_values):
     left = sensors_values[1]
     right = sensors_values[3]
     rightest = sensors_values[4]
-
-    if top < 0.10 and leftest < 0.06:
+    print(sensors_values)
+    if top < 0.7 and leftest < 0.05:
         return 2
-    elif top < 0.10 and rightest < 0.06:
+    elif top < 0.7 and rightest < 0.05:
         return 3
-    elif top < 0.06:
+    elif top < 0.05:
         return 0
     else:
         return 1
 
 
-def is_colliding(x, y):
-    # should be box collision
-    Polygon(((x - 0.0725, y - 0.0525), (x - 0.0725, y + 0.0525),
-             (x + 0.0725, y + 0.0525), (x + 0.0725, y - 0.0525)))
+def is_colliding(x, y, a):
+    a = a - math.radians(90)
+    print("entry points: ", x, y, a)
+    box_x = 0.0525
+    box_y_top = 0.0725 + 0.03
+    box_y_bottom = 0.0725 - 0.03
 
-    return WORLD.distance(Point(x, y)) < 0.005
+    collision_box = Polygon(
+        ((x - box_x, y - box_y_bottom), (x - box_x, y + box_y_top),
+         (x + box_x, y + box_y_top), (x + box_x, y - box_y_bottom)))
+
+    collision_box = rotate(collision_box, a, (x, y), use_radians=True)
+    return collision_box.intersects(WORLD)
 
 
 def train(epoch, epsilon, gamma, lr):
@@ -165,13 +173,16 @@ def train(epoch, epsilon, gamma, lr):
                 x, y, q, left_wheel_velocity, right_wheel_velocity)
 
             # check collision with arena walls
-            if is_colliding(x, y):
+            if is_colliding(x, y, q):
                 print(x, y)
                 print("collided")
                 print(WORLD.distance(Point(x, y)))
                 print("\n\n\n")
                 sys.exit(0)
                 break
+            if cnt % 30 == 0:
+                FILE.write(str(x) + ", " + str(y) + ", " +
+                           str(cos(q)*0.05) + ", " + str(sin(q)*0.05) + "\n")
         print(Q)
 
 
@@ -204,7 +215,7 @@ def run():
             x, y, q, left_wheel_velocity, right_wheel_velocity)
 
         # check collision with arena walls
-        if is_colliding(x, y):
+        if is_colliding(x, y, q):
             print(x, y)
             print("collided")
             print(WORLD.distance(Point(x, y)))
