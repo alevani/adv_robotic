@@ -102,6 +102,7 @@ def train(epoch, epsilon, gamma, lr):
     right_wheel_velocity = SPEED  # robot right wheel velocity in radians/s
     for i in range(0, epoch):
         # print("Epoch: ", i)
+        # 
         x = 0.3   # robot position in meters - x direction - positive to the right
         y = 0.5   # robot position in meters - y direction - positive up
         # robot heading with respect to x-axis in radians
@@ -235,5 +236,5 @@ lr = 0.7  # up to 1
 Q = zeros((4, 4))
 
 train(epoch, epsilon, gamma, lr)
-run()
+# run()
 FILE.close()
