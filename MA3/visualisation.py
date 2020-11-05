@@ -119,8 +119,9 @@ def scale(x, y):
     transpose from particule filter coordinate system
     to pygame coordinate system
     '''
-    nx = arena_w/2 + x*100*zoom + margin_w - ROBOT_SIZE/2
-    ny = arena_h/2 + y*100*zoom * -1 + margin_h - ROBOT_SIZE/2
+    tresh = 20
+    nx = arena_w/2 + x*100*zoom + margin_w - ROBOT_SIZE/2 + tresh
+    ny = arena_h/2 + y*100*zoom * -1 + margin_h - ROBOT_SIZE/2+tresh
     return nx, ny
 
 
