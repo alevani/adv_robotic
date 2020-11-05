@@ -1,6 +1,7 @@
 import sys
  
 import pygame
+from time import sleep
 import math
 import json
 from pygame.locals import *
@@ -126,18 +127,23 @@ def draw_from_json(screen, json_str):
         draw_ray(screen, ray[0], ray[1])
 
 # Game loop.
-def game_loop(robots_coor, init_state=STATE):
+def game_loop(robots_coor, init_state):
     pygame.init()
     fps = 30
+    pause = False
     fpsClock = pygame.time.Clock()
     screen = pygame.display.set_mode((screen_width, screen_height))
-    while True:
-        simulate(screen, init_state)
+    # while True:
+    for state in init_state:
+        simulate(screen, state)
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    pause = True
+                    sleep(5)
                 if event.key == pygame.K_q:
                     pygame.quit()
                     sys.exit()
@@ -156,7 +162,26 @@ if __name__ == "__main__":
     H = 1.18  # height of arena
     # rj = '{"rpos": {"x": 2.504402704257438e-17, "y": 0.40900000000026826, "a": 1.5707963267948966}, "spos": [[[-0.049999999999999975, 0.46900000000026826], [-2.5440159255837727, 2.2768648857610563]], [[-0.024999999999999977, 0.48400000000026827], [-1.2561420668517567, 2.7220438262868987]], [[2.504402704257438e-17, 0.48680000000026824], [2.6262550607716093e-16, 2.8468000000002682]], [[0.025000000000000026, 0.4340000000002683], [1.2561420668517573, 2.672043826286899]], [[0.05000000000000003, 0.46900000000026826], [2.5440159255837727, 2.2768648857610563]]]}'
     # rj = '{"rpos": {"x": 3.582091887503807e-17, "y": 0.5849999999999724, "a": 1.5707963267948966}, "spos": [[[3.582091887503807e-17, 0.5849999999999724], [-2.494015925583773, 2.39286488576076]], [[3.582091887503807e-17, 0.5849999999999724], [-1.2311420668517568, 2.823043826286603]], [[3.582091887503807e-17, 0.5849999999999724], [2.7340239790962463e-16, 2.9449999999999723]], [[3.582091887503807e-17, 0.5849999999999724], [1.2311420668517572, 2.823043826286603]], [[3.582091887503807e-17, 0.5849999999999724], [2.494015925583773, 2.39286488576076]]]}'
-    rj = '{"rpos": {"x": 0.3, "y": 0.5, "a": 0.7853981633974483}, "spos": [[[0.3, 0.5], [0.6381642818609136, 2.8510194874965196]], [[0.3, 0.5], [2.0312475148660587, 2.612045093380779]], [[0.3, 0.5], [3.0435743110038045, 2.1687720036002522]], [[0.3, 0.5], [3.7723453230158572, 1.5530268389391486]], [[0.3, 0.5], [4.165235428595973, 0.7056875528844733]]]}'
-    state = json.loads(rj)
+    # rj = '{"rpos": {"x": 0.3, "y": 0.5, "a": 0.7853981633974483}, "spos": [[[0.3, 0.5], [0.6381642818609136, 2.8510194874965196]], [[0.3, 0.5], [2.0312475148660587, 2.612045093380779]], [[0.3, 0.5], [3.0435743110038045, 2.1687720036002522]], [[0.3, 0.5], [3.7723453230158572, 1.5530268389391486]], [[0.3, 0.5], [4.165235428595973, 0.7056875528844733]]]}'
+    # state = json.loads(rj)
+    states = []
+
+    with open('trajectory.json', 'r') as f:
+        lines = f.readlines()
+
+    for l in lines:
+        r = json.loads(l)
+        # print(r)
+        print(r['rpos']['x'])
+        states.append(r)
+
+
     # print(robots_coor)
-    game_loop(robots_coor, init_state=state)
+    game_loop(robots_coor, init_state=states)
+
+
+
+
+
+
+
