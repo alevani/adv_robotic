@@ -30,11 +30,11 @@ SIMULATION_TIMESTEP = .001
 # the WORLD is a rectangular arena with width W and height H
 WORLD = LinearRing([(W/2, H/2), (-W/2, H/2), (-W/2, -H/2), (W/2, -H/2)])
 
-SENSORS_POSITION = [Position( -0.05,   0.06, math.radians(40)),
+SENSORS_POSITION = [Position(-0.05,   0.06, math.radians(40)),
                     Position(-0.025,  0.075, math.radians(18.5)),
-                    Position(     0, 0.0778, math.radians(0)),
-                    Position( 0.025,  0.025, math.radians(-18.5)),
-                    Position(  0.05,   0.06, math.radians(-40))]
+                    Position(0, 0.0778, math.radians(0)),
+                    Position(0.025,  0.025, math.radians(-18.5)),
+                    Position(0.05,   0.06, math.radians(-40))]
 
 
 FILE = open("trajectory.dat", "w")
@@ -109,20 +109,21 @@ def train(epoch, epsilon, gamma, lr):
         q = math.radians(45)
         action_index = 0
         state = 1
-        pygame_drawings = [] 
+        pygame_drawings = []
         for cnt in range(10000):
             robot_draw = {
                 'rpos': [],
                 'spos': []
             }
             robot_position = Position(x, y, q)
-            robot_draw['rpos'] = robot_position.__dict__ # use __dict__ to make it jsonable
+            # use __dict__ to make it jsonable
+            robot_draw['rpos'] = robot_position.__dict__
             rays = []
             # create rays
             for i, spos in enumerate(SENSORS_POSITION):
                 # nx = spos.x + robot_position.x
                 # ny = spos.y + robot_position.y
-                na = (spos.a + robot_position.a ) % 360
+                na = (spos.a + robot_position.a) % 360
                 start_ray = (robot_position.x, robot_position.y)
                 end_ray = (robot_position.x + cos(na)*2*W,
                            robot_position.y + sin(na)*2*H)
