@@ -236,6 +236,7 @@ class ParticleFiltering:
 
     def localise(self):
         sample = create_random_sample()
+        print('--', sample)
         try:
             while True:
                 sample = self.move_sample(sample)
@@ -245,6 +246,7 @@ class ParticleFiltering:
                 best_candidates_w_fitness = get_best_candidates(
                     sample, real_robot_lidar)
                 best_candidates = [x[0] for x in best_candidates_w_fitness]
+                print(best_candidates)
                 new_candidates = []
 
                 for virtual_robot in best_candidates:
@@ -254,9 +256,9 @@ class ParticleFiltering:
                 sample = new_candidates
                 self.position = best_candidates[0]
                 fitness = best_candidates_w_fitness[0][1]
-                print(self.position, fitness)
+                # print(self.position, fitness)
                 self.has_converged = True
-                print("-------------------------- Converged with fitness: ", fitness)
+                # print("-------------------------- Converged with fitness: ", fitness)
 
         except KeyboardInterrupt:
             sys.exit()
@@ -301,17 +303,13 @@ class ParticleFiltering:
 if __name__ == '__main__':
     from Lidar import FakeLidar
     import threading
-    fake_lidar = FakeLidar(Robot(x=0, y=0, angle=270))
-    print(fake_lidar.get_scan_data())
+    fake_lidar = FakeLidar(Robot(x=0.3, y=0.5, angle=270))
+    # print(fake_lidar.get_scan_data())
     pf = ParticleFiltering(fake_lidar)
     # pf.localise()
-    # scanner_thread = threading.Thread(target=pf.localise)
-    scanner_thread = threading.Thread(target=pf.localise_with_color)
+    scanner_thread = threading.Thread(target=pf.localise)
+    # scanner_thread = threading.Thread(target=pf.localise_with_color)
     scanner_thread.start()
-    while True:
-        cmd = input('command')
-        if cmd == 'print':
-            print()
 
 else:
     from Lidar import Lidar

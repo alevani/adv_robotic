@@ -1,3 +1,4 @@
+#! /usr/bin/env python3.7
 import sys
  
 import pygame
@@ -15,7 +16,7 @@ light_black = (130,130,130)
 light_red = (255,130,130)
  
 margin_w, margin_h = 50, 50
-zoom = 4
+zoom = 5
 arena_w, arena_h = 194*zoom, 118*zoom
 
 screen_width, screen_height = arena_w + 2*margin_w, arena_h + 2*margin_h,
@@ -79,11 +80,17 @@ def draw_arena(screen):
     pygame.draw.circle(screen, red,    (arena_w+margin_w ,arena_h+margin_h), 20)
 
 
-def simulate(screen, robots):
-    robots = [((100, 100), 57), ((200,200), 180)]
+def simulate(screen) :
+    global zoom
+    import sample
+    robots = [((200, 300), 57)]
+    # robots = sample.robots[0]
+    # print(robots)
+    # robots = [ ((r[0]*100*zoom + margin_w, r[1]*100*zoom + margin_h), r[2]) for r in robots  ]
     from time import sleep
     draw_arena(screen)
     for r in robots:
+        print(r)
         draw_robot(screen, r[0], r[1], virtual=True)
 
 
@@ -113,5 +120,5 @@ def read_file(path):
     print(lines)
 
 if __name__ == "__main__":
-    coors = read_file('trajectory.dat')
+    # coors = read_file('trajectory.dat')
     game_loop()
