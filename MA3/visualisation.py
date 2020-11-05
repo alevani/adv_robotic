@@ -1,5 +1,5 @@
 import sys
- 
+
 import pygame
 from time import sleep
 import math
@@ -8,14 +8,14 @@ from pygame.locals import *
 from dataclasses import dataclass
 
 
-red = (255,0,0)
-green = (0,255,0)
-blue = (0,0,255)
-yellow = (255,255,0)
-white = (255,255, 255)
-black = (0,0,0)
-light_black = (130,130,130)
-light_red = (255,130,130)
+red = (255, 0, 0)
+green = (0, 255, 0)
+blue = (0, 0, 255)
+yellow = (255, 255, 0)
+white = (255, 255, 255)
+black = (0, 0, 0)
+light_black = (130, 130, 130)
+light_red = (255, 130, 130)
 
 STATE = {}
 
@@ -25,6 +25,7 @@ zoom = 4
 arena_w, arena_h = 194*zoom, 118*zoom
 
 screen_width, screen_height = arena_w + 2*margin_w, arena_h + 2*margin_h,
+
 
 def rot_center(image, rect, angle):
     rot_img = pygame.transform.rotate(image, angle)
@@ -70,8 +71,8 @@ def draw_robot(screen, pos, angle, virtual=False, size=ROBOT_SIZE):
     # image.fill(bg_color)
     rect = image.get_rect()
     x, y = pos
-    rect.topleft = ( x-size/2, y-size/2 ) 
-    poly = ((0,0),(0,size),(size//2,size),(size,size//2),(size//2,0))
+    rect.topleft = (x-size/2, y-size/2)
+    poly = ((0, 0), (0, size), (size//2, size), (size, size//2), (size//2, 0))
     pygame.draw.polygon(image, color, poly)
 
     a = math.degrees(angle)
@@ -79,34 +80,38 @@ def draw_robot(screen, pos, angle, virtual=False, size=ROBOT_SIZE):
     screen.blit(img, rect)
 
 
-
 def draw_arena(screen):
     screen.fill((0, 0, 0))
-    pygame.draw.rect(screen, white,(margin_w,margin_h,arena_w,arena_h))
-    pygame.draw.circle(screen, blue,   (margin_w         ,margin_h), 20)
-    pygame.draw.circle(screen, yellow, (arena_w+margin_w ,margin_h), 20)
-    pygame.draw.circle(screen, green,  (margin_w         ,arena_h+margin_h), 20)
-    pygame.draw.circle(screen, red,    (arena_w+margin_w ,arena_h+margin_h), 20)
+    pygame.draw.rect(screen, white, (margin_w, margin_h, arena_w, arena_h))
+    pygame.draw.circle(screen, blue,   (margin_w, margin_h), 20)
+    pygame.draw.circle(screen, yellow, (arena_w+margin_w, margin_h), 20)
+    pygame.draw.circle(screen, green,  (margin_w, arena_h+margin_h), 20)
+    pygame.draw.circle(
+        screen, red,    (arena_w+margin_w, arena_h+margin_h), 20)
+
 
 def draw_ray(screen, start, end):
     pygame.draw.line(screen, red, start, end)
 
+
 def draw_ray(screen, start, end):
     pygame.draw.line(screen, red, start, end)
+
 
 def simulate(screen, state=STATE):
     from time import sleep
     draw_arena(screen)
     print(state)
     r = state['rpos']
-    x , y = scale(r['x'], r['y'])
+    x, y = scale(r['x'], r['y'])
     draw_robot(screen, (x, y), r['a'], virtual=True)
     for ray in state['spos']:
         x, y = scale(ray[0][0], ray[0][1])
         xx, yy = scale(ray[1][0], ray[1][1])
         draw_ray(screen, (x, y), (xx, yy))
-    for sensor in state['bpos']:
-        pygame.draw.circle(screen, green, sensor)
+    for point in state['bpos']:
+        print(point)
+        pygame.draw.circle(screen, red, scale(point[0], point[1]), 5)
 
 
 def scale(x, y):
@@ -114,16 +119,15 @@ def scale(x, y):
     transpose from particule filter coordinate system
     to pygame coordinate system
     '''
-    nx = arena_w/2 + x*100*zoom      + margin_w - ROBOT_SIZE/2
+    nx = arena_w/2 + x*100*zoom + margin_w - ROBOT_SIZE/2
     ny = arena_h/2 + y*100*zoom * -1 + margin_h - ROBOT_SIZE/2
     return nx, ny
-
 
 
 def draw_from_json(screen, json_str):
     obj = json.loads(json_str)
     rbt = obj['rpos']
-    robot =  ( rbt['x'],rbt['y'],rbt['a'])
+    robot = (rbt['x'], rbt['y'], rbt['a'])
     rays = obj['spos']
     draw_arena(screen)
     draw_robot(screen, (r[0], r[1]), r[2], virtual=True)
@@ -131,6 +135,8 @@ def draw_from_json(screen, json_str):
         draw_ray(screen, ray[0], ray[1])
 
 # Game loop.
+
+
 def game_loop(robots_coor, init_state):
     pygame.init()
     fps = 30
@@ -151,14 +157,16 @@ def game_loop(robots_coor, init_state):
                 if event.key == pygame.K_q:
                     pygame.quit()
                     sys.exit()
-        pygame.display.flip() # render drawing
+        pygame.display.flip()  # render drawing
         fpsClock.tick(fps)
+
 
 def read_file(path):
     with open(path, 'r') as f:
         lines = f.readlines()
-    lines = [ x.split(',') for x in lines ] # x,y,a in radians
+    lines = [x.split(',') for x in lines]  # x,y,a in radians
     return lines
+
 
 if __name__ == "__main__":
     robots_coor = read_file('trajectory.dat')
@@ -179,13 +187,5 @@ if __name__ == "__main__":
         print(r['rpos']['x'])
         states.append(r)
 
-
     # print(robots_coor)
     game_loop(robots_coor, init_state=states)
-
-
-
-
-
-
-
