@@ -91,6 +91,8 @@ def draw_arena(screen):
 def draw_ray(screen, start, end):
     pygame.draw.line(screen, red, start, end)
 
+def draw_ray(screen, start, end):
+    pygame.draw.line(screen, red, start, end)
 
 def simulate(screen, state=STATE):
     from time import sleep
@@ -103,6 +105,8 @@ def simulate(screen, state=STATE):
         x, y = scale(ray[0][0], ray[0][1])
         xx, yy = scale(ray[1][0], ray[1][1])
         draw_ray(screen, (x, y), (xx, yy))
+    for sensor in state['bpos']:
+        pygame.draw.circle(screen, green, sensor)
 
 
 def scale(x, y):
