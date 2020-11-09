@@ -199,10 +199,7 @@ def train(epoch, epsilon, gamma, lr, sensors):
             else:
                 action_index = np.argmax(Q[state])
 
-            action = ACTIONS[action_index]
-
-            left_wheel_velocity = action[0]
-            right_wheel_velocity = action[1]
+            left_wheel_velocity, right_wheel_velocity = ACTIONS[action_index]
 
             # # step simulation
             new_x, new_y, new_q = simulationstep(
