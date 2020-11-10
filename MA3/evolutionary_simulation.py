@@ -1,6 +1,8 @@
 import numpy as np
 import robot_evolutionary_simulation as sim
 import random
+from random import randint
+from copy import deepcopy
 
 # TODO enlever les float dans la Q table.
 
@@ -22,10 +24,23 @@ def mutation(gene, n):
     n: number of mutation
     return Q table (with the mutation)
     '''
-    # for _ in range(0, n):
-    #     a = random(0, 6)
-    #     b = random(0, 4)
-    # chromosome = gene[a][b]
+    copied_gene = deepcopy(gene)
+    for _ in range(0, n):
+        state = randint(0, 6 - 1)
+        action = randint(0, 4 - 1)
+
+        chromosome = copied_gene[state][action]
+
+        random_index = randint(0, 8 - 1)
+        chromosome = chromosome ^ (1 << random_index)
+
+        if chromosome > 500:
+            chromosome = 500
+        elif chromosome < -500:
+            chromosome = -500
+        copied_gene[state][action] = chromosome
+
+    return copied_gene
 
 
 def crossover(gene1, gene2):
