@@ -67,28 +67,6 @@ def create_rays(sensors):
     return rays, spos
 
 
-def get_state(sensors_values):
-    top = sensors_values[2]
-    leftest = sensors_values[0]
-    left = sensors_values[1]
-    right = sensors_values[3]
-    rightest = sensors_values[4]
-    bottom_left = sensors_values[5]
-    bottom_right = sensors_values[6]
-
-    tr = 0.02
-    if top < 0.07 + tr and leftest < 0.05 + tr:
-        return 2
-    elif top < 0.07 + tr and rightest < 0.05 + tr:
-        return 3
-    elif top < 0.03 + tr:
-        return 0
-    elif bottom_left < 0.06 + tr or bottom_right < 0.06 + tr:
-        return 4
-    else:
-        return 1
-
-
 def has_collided(x, y, a):
     a = a - math.radians(90)
 
@@ -115,6 +93,28 @@ def update_sensors_pos(sensors, x, y, a):
     return sensors
 
 
+def get_state(sensors_values):
+    top = sensors_values[2]
+    leftest = sensors_values[0]
+    left = sensors_values[1]
+    right = sensors_values[3]
+    rightest = sensors_values[4]
+    bottom_left = sensors_values[5]
+    bottom_right = sensors_values[6]
+
+    tr = 0.02
+    if top < 0.07 + tr and leftest < 0.05 + tr:
+        return 2
+    elif top < 0.07 + tr and rightest < 0.05 + tr:
+        return 3
+    elif top < 0.03 + tr:
+        return 0
+    elif bottom_left < 0.03 + tr or bottom_right < 0.03 + tr:
+        return 4
+    else:
+        return 1
+
+
 def rotate_all_pos(sensors, x, y, a):
     for pos in sensors:
         point = rotate(Point(pos.x, pos.y), a,
@@ -125,19 +125,21 @@ def rotate_all_pos(sensors, x, y, a):
     return sensors
 
 
-def simulate(Q, ttl):
+def train(sensors):
+    global Q
+    imut_s = deepcopy(sensors)
+
     x = 0.0   # robot position in meters - x direction - positive to the right
     y = 0.0   # robot position in meters - y direction - positive up
     # robot heading with respect to x-axis in radians
     q = math.radians(90)
     action_index = 0
     state = 1
-    sensors = deepcopy(SENSORS_POSITION)
+    sensors = deepcopy(imut_s)
     left_wheel_velocity = SPEED   # robot left wheel velocity in radians/s
     right_wheel_velocity = SPEED  # robot right wheel velocity in radians/s
     update_sensors_pos(sensors, 0, 0, math.radians(90))
-    fitness = 0
-    for _ in range(ttl):
+    for cnt in range(10000):
         robot_draw = {
             'rpos': [],
             'spos': [],
@@ -158,8 +160,6 @@ def simulate(Q, ttl):
 
         ###### Q Learning #######
         state = get_state(sensors_values)
-        if state == 1:
-            fitness += 1
 
         action_index = np.argmax(Q[state])
 
@@ -186,6 +186,13 @@ def simulate(Q, ttl):
         if collided:
             print("collided")
             break
+        if cnt % 20 == 0:
+            FILE.write(json.dumps(robot_draw))
+            FILE.write("\n")
 
-    FILE.close
-    return fitness
+
+Q = np.array([[0, 251, 472, -52], [172, -53, 445, 466], [-356,
+                                                         227, -321, 486], [396, -51, 257, 339], [379, -14, 235, 430]])
+
+train(SENSORS_POSITION)
+FILE.close()
