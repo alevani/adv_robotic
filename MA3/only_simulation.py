@@ -161,15 +161,11 @@ def train(sensors):
         ###### Q Learning #######
         state = get_state(sensors_values)
 
-        action_index = np.argmax(Q[state])
-
-        left_wheel_velocity, right_wheel_velocity = ACTIONS[action_index]
+        left_wheel_velocity, right_wheel_velocity = Q[state]
 
         # # step simulation
         new_x, new_y, new_q = simulationstep(
             x, y, q, left_wheel_velocity, right_wheel_velocity)
-
-        # new_x, new_y = bound_xy(new_x, new_y)
 
         sensors = update_sensors_pos(
             sensors, new_x - x, new_y - y, new_q - q)
@@ -191,8 +187,8 @@ def train(sensors):
             FILE.write("\n")
 
 
-Q = np.array([[0, 251, 472, -52], [172, -53, 445, 466], [-356,
-                                                         227, -321, 486], [396, -51, 257, 339], [379, -14, 235, 430]])
+Q = np.array(
+    [[-200, -200], [200, 200], [-200, 200], [200, -200], [200, 200]])
 
 train(SENSORS_POSITION)
 FILE.close()

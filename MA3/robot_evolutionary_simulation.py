@@ -37,9 +37,6 @@ SENSORS_POSITION = [Position(-0.05, 0.06, math.radians(40)), Position(-0.025,
                                                                       0.075, math.radians(18.5)), Position(0, 0.0778, math.radians(0)), Position(0.025, 0.075, math.radians(-18.5)), Position(0.05, 0.06, math.radians(-40)), Position(-0.03, -0.03, math.radians(180)), Position(0.03, -0.03, math.radians(180))]
 
 
-FILE = open("trajectory.json", "w")
-
-
 def simulationstep(x, y, q, left_wheel_velocity, right_wheel_velocity):
     # step model time/timestep times
     for step in range(int(ROBOT_TIMESTEP/SIMULATION_TIMESTEP)):
@@ -158,12 +155,14 @@ def simulate(Q, ttl):
 
         ###### Q Learning #######
         state = get_state(sensors_values)
-        if state == 1:
-            fitness += 1
 
-        action_index = np.argmax(Q[state])
+        left_wheel_velocity, right_wheel_velocity = Q[state]
 
-        left_wheel_velocity, right_wheel_velocity = ACTIONS[action_index]
+        # fitness += ((left_wheel_velocity + right_wheel_velocity) / 400) * (1 - math.sqrt(
+        #     abs(left_wheel_velocity-right_wheel_velocity) / 400))*(1 - max(sensors_values)) # 2.27
+
+        fitness += (left_wheel_velocity + right_wheel_velocity) * (1 - math.sqrt(
+            abs(left_wheel_velocity-right_wheel_velocity)))*(1 - max(sensors_values))  # !ramaner tout a 1
 
         # # step simulation
         new_x, new_y, new_q = simulationstep(
@@ -187,5 +186,4 @@ def simulate(Q, ttl):
             print("collided")
             break
 
-    FILE.close
     return fitness

@@ -12,8 +12,7 @@ def init_population(n):
     for _ in range(0, n-1):
         Qintermediate = []
         for _ in range(0, 5):
-            Qintermediate.append(
-                list(np.random.randint(low=-500, high=500, size=4)))
+            Qintermediate.append([randint(-200, 200), randint(-200, 200)])
         Qs.append((Qintermediate, 0))
     return Qs
 
@@ -23,19 +22,20 @@ def mutation(gene, n):
     copied_gene = deepcopy(gene)
     for _ in range(0, n):
         state = randint(0, 5 - 1)
-        action = randint(0, 4 - 1)
+        motor = randint(0, 1)
 
-        chromosome = copied_gene[state][action]
+        chromosome = copied_gene[state][motor]
 
         random_index = randint(0, 8 - 1)
+        # ! check if the changes are good or not
         chromosome = chromosome ^ (1 << random_index)
 
-        if chromosome > 500:
-            chromosome = 500
-        elif chromosome < -500:
-            chromosome = -500
+        if chromosome > 200:
+            chromosome = 200
+        elif chromosome < -200:
+            chromosome = -200
 
-        copied_gene[state][action] = chromosome
+        copied_gene[state][motor] = chromosome
 
     return copied_gene
 
@@ -84,6 +84,7 @@ def main():
 
     best_population_size = int(0.5 * population_n)  # ?
 
+    #! maybe do first generation so the first selection is directly based on the best and not on the one where fitness is 0
     #! deepcopy?
     #! maybe keep fitness when selection to make some statistics
     for i in range(0, convergence):
@@ -92,7 +93,7 @@ def main():
 
         new_Qs = create_new_population(
             bests, population_n)  # ! return array(type: q)
-
+        print(bests)
         population = []
         for q in new_Qs:
             print("Start new simulation")
