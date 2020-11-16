@@ -3,6 +3,8 @@ import dbus.mainloop.glib
 import dbus
 from time import sleep
 import globals
+import threading
+
 
 class Thymio:
     def __init__(self):
@@ -21,15 +23,64 @@ class Thymio:
         self.receiver = None
 
         sleep(3)
+        self.sense()
+
+        self.startCommunication()
+        self.info_to_send = 1000
+        # self.sendInformation()
+        # self.receiveInformation()
+
+    ######### COMMUNICATION #########
+    def set_info_to_send(self, value):
+        self.info_to_send = value
+
+    def startCommunication(self):
+        self.asebaNetwork.SendEventName("prox.comm.enable", [1])
+        self.asebaNetwork.SendEventName("prox.comm.rx", [0])
+
+    def sendInformation(self):
+        self.asebaNetwork.SendEventName("prox.comm.tx", [self.info_to_send])
+        threading.Timer(.1, self.sendInformation).start()
+
+    def receiveInformation(self):
+        self.rx = self.asebaNetwork.GetVariable("thymio-II", "prox.comm.rx")
+        threading.Timer(.1, self.receiveInformation).start()
+   ###################################
+
+    def sense(self):
+        self.prox_horizontal = self.asebaNetwork.GetVariable(
+            "thymio-II", "prox.horizontal")
+        threading.Timer(.1, self.sense).start()
+
+    def get_prox_state(self):
+        self.SC = self.prox_horizontal[2]  # Sensor Central
+        self.SL = self.prox_horizontal[0]  # Sensor Left
+        self.SR = self.prox_horizontal[4]  # Sensor Right
+
+        if self.SL > 2000 and self.SR > 2000:
+            return (1, 0, 1)
+        elif self.SR > 2000:
+            return (0, 0, 1)
+        elif self.SL > 2000:
+            return (1, 0, 0)
+        elif self.SC > 2000:
+            return (0, 1, 0)
+        else:
+            return (0, 0, 0)
+
+        # elif self.SC > 0 and self.SR > 0:
+        #     return (0, 1, 1)
+        # elif self.SC > 0 and self.SL > 0:
+        #     return (1, 1, 0)
 
     def dbusError(self, e):
         print("dbus error: %s" % str(e))
 
     def sense_floor(self):
-        return 0,0
+        return 0, 0
 
     def get_sensor_state(self):
-        raw_left , raw_right = self.sense_floor()
+        raw_left, raw_right = self.sense_floor()
 
         if raw_left > globals.wall_bot_limit and raw_left < globals.wall_top_limit:
             left_state = 1
@@ -39,39 +90,22 @@ class Thymio:
             right_state = 1
         elif raw_right > globals.safe_zone_bot_limit and raw_right < globals.safe_zone_top_limit:
             right_state = 2
-        return (left_state, right_state) # 0,1,2 == (nowall, wall, safezone)
-
+        return (left_state, right_state)  # 0,1,2 == (nowall, wall, safezone)
 
     def drive(self, l, r):
         self.asebaNetwork.SendEventName('motor.target', [l, r])
         sleep(.2)
 
-    def set_led(self, color: str):
-        # TODO
-        pass
-
-    def stop_transmission_threat(second: int):
-        # TODO with threat
-        pass
-
-    def receiver_thread(self):
-        # TODO
-        # self.reveiver = aseba..
-        pass
-
-    def wait_in_safe_zone(self):
-        # stop transmiting 2
-        # wait for sense 2
-        # if 2: drive forward( 5 sec )
-        # retrasnmit 2
-
-
+    def set_led(self, color):
+        self.aseba.SendEventName("leds.bottom.right", color)
+        self.aseba.SendEventName("leds.bottom.left", color)
+        self.aseba.SendEventName("led.circle", color)
+        self.aseba.SendEventName("led.buttons", color)
+        self.aseba.SendEventName("led.color", color)
+        self.aseba.SendEventName("led.top", color)
 
     def stop(self):
         left_wheel = 0
         right_wheel = 0
         self.asebaNetwork.SendEventName(
             "motor.target", [left_wheel, right_wheel])
-
-
-
