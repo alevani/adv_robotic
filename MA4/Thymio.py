@@ -21,6 +21,7 @@ class Thymio:
             "thympi.aesl", reply_handler=self.dbusError, error_handler=self.dbusError
         )
         self.receiver = None
+        self.ground_sensors = None
 
         sleep(3)
         self.sense()
@@ -76,25 +77,34 @@ class Thymio:
     def dbusError(self, e):
         print("dbus error: %s" % str(e))
 
-    def sense_floor(self):
-        return 0, 0
+    def sense_ground(self):
+        sensors = self.asebaNetwork.GetVariable(
+            "thymio-II", "prox.ground.reflected")
+        return sensors[0], sensors[1]
+
+    def sense_ground_thread(self):
+        self.ground_sensors = self.asebaNetwork.GetVariable(
+            "thymio-II", "prox.ground.reflected")
+        threading.Timer(.01, self.sense_ground_thread).start()
 
     def get_sensor_state(self):
-        raw_left, raw_right = self.sense_floor()
+        raw_left, raw_right = self.sense_ground()
+        left_state = 0
+        right_state = 0
 
         if raw_left > globals.wall_bot_limit and raw_left < globals.wall_top_limit:
             left_state = 1
-        elif raw_left > globals.safe_zone_bot_limit and raw_left < globals.safe_zone_top_limit:
-            left_state = 2
+        # elif raw_left > globals.safe_zone_bot_limit and raw_left < globals.safe_zone_top_limit:
+        #     left_state = 2
         if raw_right > globals.wall_bot_limit and raw_right < globals.wall_top_limit:
             right_state = 1
-        elif raw_right > globals.safe_zone_bot_limit and raw_right < globals.safe_zone_top_limit:
-            right_state = 2
+        # elif raw_right > globals.safe_zone_bot_limit and raw_right < globals.safe_zone_top_limit:
+        #     right_state = 2
         return (left_state, right_state)  # 0,1,2 == (nowall, wall, safezone)
 
-    def drive(self, l, r):
+    def drive(self, l, r, time=0):
         self.asebaNetwork.SendEventName('motor.target', [l, r])
-        sleep(.2)
+        sleep(time)
 
     def set_led(self, color):
         self.aseba.SendEventName("leds.bottom.right", color)
