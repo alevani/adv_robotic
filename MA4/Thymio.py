@@ -28,8 +28,8 @@ class Thymio:
 
         self.startCommunication()
         self.info_to_send = 1000
-        # self.sendInformation()
-        # self.receiveInformation()
+        self.sendInformation()
+        self.receiveInformation()
 
     ######### COMMUNICATION #########
     def set_info_to_send(self, value):
@@ -112,12 +112,11 @@ class Thymio:
         # sleep(time)
 
     def set_led(self, color):
-        self.aseba.SendEventName("leds.bottom.right", color)
-        self.aseba.SendEventName("leds.bottom.left", color)
-        self.aseba.SendEventName("led.circle", color)
-        self.aseba.SendEventName("led.buttons", color)
-        self.aseba.SendEventName("led.color", color)
-        self.aseba.SendEventName("led.top", color)
+        self.asebaNetwork.SendEventName("leds.bottom.right", color)
+        self.asebaNetwork.SendEventName("leds.bottom.left", color)
+        self.asebaNetwork.SendEventName("leds.top", color)
+        # self.asebaNetwork.SendEventName("led.buttons", color)
+        # self.asebaNetwork.SendEventName("led.color", color)
 
     def stop(self):
         left_wheel = 0
