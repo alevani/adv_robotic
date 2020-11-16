@@ -6,7 +6,7 @@ SPRINT 1
     - stand still if receive 1
     - transmit 2.
     - If in safe zone and receive 2
-        -  leave sage zone
+        -  leave safe zone
         - wait 5 sec to transmit 2 again
 - Random walk in the arena
 - Behaviour based wall avoidance
