@@ -1,6 +1,7 @@
 MA2/.detect_color.py.kak.0WylMO
 MA2/.detect_color.py.kak.kvlKjL
 MA2/__pycache__
+<<<<<<< Updated upstream
 MA2/img/half_20201005_143128.mp4
 MA2/img
 MA2/divers/__pycache__
@@ -12,3 +13,11 @@ MA2
 MA2
 MA3/trajectory.json
 MA3/trajectory.json
+=======
+MA1/planner/__pycache__
+MA2/img/20201005_143128.mp4
+MA2/img/__MACOSX
+MA2/img/half_20201005_143128.mp4
+MA2/img/video1.h264
+MA2/img/video1.h264.zip
+>>>>>>> Stashed changes

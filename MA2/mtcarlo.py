@@ -9,10 +9,95 @@ import numpy as np
 import sys
 
 
+<<<<<<< Updated upstream
 WORLD = None  # gonna be defined after World
 NB_SAMPLES = 15
 NB_BEST_CANDIDATES = 10
 NB_LIDAR_RAY = 12
+=======
+class ParticleFiltering:
+    def __init__(self):
+        self.H = 1.18  # width of arena
+        self.W = 1.94  # height of arena
+
+        # the world is a rectangular arena with width W and height H
+        self.world = LinearRing(
+            [(self.W/2, self.H/2), (-self.W/2, self.H/2), (-self.W/2, -self.H/2), (self.W/2, -self.H/2)])
+
+        self.nb_samples = 200
+        self.nb_candidates = 10
+        self.scan_data = [0]*360
+
+        # Create nb_samples samples
+        self.samples = [[uniform(-self.W/2, self.W/2), uniform(-self.H/2, self.H/2), randint(0, 360)]
+                        for _ in range(0, self.nb_samples)]
+
+        self.best_candidates = self.get_best_candidates(self.samples)
+        # [(plt.scatter(be[1][0], be[1][1], c='b')) for be in best_candidates]
+
+        self.x = 0.0
+        self.y = 0.0
+        self.angle = 0
+        self.position = (0, 0, 0)
+
+    #     # Setup the RPLidar
+    #     PORT_NAME = '/dev/ttyUSB0'
+    #     self.lidar = RPLidar(None, PORT_NAME)
+
+    #     print('start lidar scan thread')
+    #     self.scanner_thread = threading.Thread(target=self.lidarScan)
+    #     self.scanner_thread.daemon = True
+    #     self.scanner_thread.start()
+
+    # def lidarScan(self):
+    #     print("Starting background lidar scanning")
+    #     for scan in self.lidar.iter_scans():
+    #         for (_, angle, distance) in scan:
+    #             self.scan_data[min([359, floor(angle)])] = distance
+
+    def set_xya(self, x, y, a):
+        self.x = x
+        self.y = y
+        self.angle = a
+
+    # return the average position of the robot on the map
+    def avg_xya(self, os):
+        return (mean([x[1][0] for x in os]), mean([x[1][1]
+                                                   for x in os]), mean([x[1][2] for x in os]))
+
+    # Fitness function
+    def calculate_distance(self, a, b):
+        return sum(abs(subtract(a, b)))
+        # return sum(abs(array([a**2 if a < 0.02 and a > -0.02 else a for a in subtract(a, b)])))
+
+    # Return world intersection with a ray
+    def return_inter(self, alpha, x, y):
+        ray = LineString(
+            [(x, y), (x+cos(alpha)*2*self.W, (y+sin(alpha)*2*self.H))])
+        s = self.world.intersection(ray)
+        return sqrt((s.x-x)**2+(s.y-y)**2)
+
+    # Get the lidar values for simulated samples
+    def get_simulated_lidar_values(self, x):
+        # shift of alpha so that both the robot and the simulation look in the same direction
+        # ? - or + shift
+        return [self.return_inter((x[2] + (alpha * 36)) % 360, x[0], x[1]) for alpha in range(0, 10)]
+
+    # Return the values thymio lidar sensor
+    def get_lidar_values(self):
+        return self.get_simulated_lidar_values((-.10, .35, 150))
+        # return [self.scan_data[x] / 1000 for x in list(range(0, 360, 36))]
+
+    # Return the nb_candidates best candidates
+    def get_best_candidates(self, samples):
+            # Contains a list of nb_samples lidar simlutation (each with 10 rays)
+        lr_samples = [(self.get_simulated_lidar_values(x), x) for x in samples]
+
+        DISTrr = self.get_lidar_values()
+
+        candidates = [((self.calculate_distance(DISTrr, sample[0]), sample[1]))
+                      for sample in lr_samples]
+>>>>>>> Stashed changes
 
 
 class World:
@@ -301,6 +386,7 @@ class ParticleFiltering:
 
 
 if __name__ == '__main__':
+<<<<<<< Updated upstream
     from Lidar import FakeLidar
     import threading
     fake_lidar = FakeLidar(Robot(x=0.3, y=0.5, angle=270))
@@ -313,3 +399,23 @@ if __name__ == '__main__':
 
 else:
     from Lidar import Lidar
+=======
+    pf = ParticleFiltering()
+
+    print('start particle filtering thread')
+    thread = Thread(target=pf.Localize)
+    thread.daemon = True
+    thread.start()
+    pf.set_xya(-.10, .35, 150)
+    try:
+        while True:
+            print(pf.position)
+            # if(pf.position[1] >= 0.58):
+            #     exit(0)
+
+
+    except KeyboardInterrupt:
+        sys.exit()
+
+    # TODO use the color sensor afterward
+>>>>>>> Stashed changes

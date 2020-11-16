@@ -24,6 +24,7 @@ def debug_img(img, title=''):
     if DEBUG:
         show(img, title='')
 
+<<<<<<< Updated upstream
 
 def calculate_angular_speed_rotation(speed, degree=1, wheel_diam=9.45):
     peri = pi * wheel_diam
@@ -37,6 +38,10 @@ def polar2cart(r, a):
     y = r * cos(a)
     return (x, y)
 
+=======
+def delta(a, b):
+    return abs(a - b)
+>>>>>>> Stashed changes
 
 def caculate_angle_to_dest(robot_angle,
                            robot_x, robot_y,
