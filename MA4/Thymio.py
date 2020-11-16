@@ -46,6 +46,10 @@ class Thymio:
     def receiveInformation(self):
         self.rx = self.asebaNetwork.GetVariable("thymio-II", "prox.comm.rx")
         threading.Timer(.1, self.receiveInformation).start()
+
+    def restart(self):
+        threading.Timer(5, self.set_info_to_send, 2).start()
+
    ###################################
 
     def sense(self):
