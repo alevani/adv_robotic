@@ -1,29 +1,8 @@
-'''
-SPRINT 1
-- Basic requirements (LEDs.. Comm..)
-    - turn LED blue
-    - turn LED green if in safe zone
-    - stand still if receive 1
-    - transmit 2.
-    - If in safe zone and receive 2
-        -  leave safe zone
-        - wait 5 sec to transmit 2 again
-- Random walk in the arena
-- Behaviour based wall avoidance
-- Behaviour based safe zone detection
-
-SPRINT 2
-- safe zone color detection
-- seeker avoidance color based
-
-SPRINT 3
-- Learning?
-'''
 #! /usr/bin/env python3.7
-import Thymio
+from Thymio import Thymio
 from random import randint
-import globals
 from time import sleep
+import globals
 import os
 
 
@@ -34,35 +13,52 @@ def main():
     notTagged = True
     try:
         while notTagged:
-
             sensor_state = thymio.get_sensor_state()
             time = 0
+            if 1 in sensor_state:
+                if sensor_state == (1, 0) or sensor_state == (1, 2):
+                    left_motor = 500
+                    right_motor = -500
+                    time = 0.4
+                    print('\n motors', left_motor, right_motor)
+                    print('sensors', sensor_state)
 
-            if sensor_state == (1, 0):
-                left_motor = 500
-                right_motor = -500
-                time = 1
+                elif sensor_state == (0, 1) or sensor_state == (2, 1):
+                    left_motor = -500
+                    right_motor = 500
+                    print('\n motors', left_motor, right_motor)
+                    print('sensors', sensor_state)
+                    time = 0.4
 
-            elif sensor_state == (0, 1):
-                left_motor = -500
-                right_motor = 500
-                time = 1
+                elif sensor_state == (1, 1):
+                    left_motor = 500
+                    right_motor = -500
+                    time = 1.2
+                    print('\n motors', left_motor, right_motor)
+                    print('sensors', sensor_state)
 
-            elif sensor_state == (1, 1):
-                left_motor = 500
-                right_motor = -500
-                time = 0.7
+                else:
+                    print("undefined sensor value: ", sensor_state)
 
             elif sensor_state == (2, 2):  # avoider
-                thymio.drive(0, 0)
+                # drive in the zone
+                thymio.drive(1000, 1000)
+                sleep(1)
+
+                left_motor = 0
+                right_motor = 0
+                thymio.stop()
                 thymio.set_led(globals.GREEN)
                 thymio.set_info_to_send(1000)
 
-                while thymio.rx != 2:
-                    sleep(0.1)
-                thymio.drive(1000, 1000,  3)
+                # while thymio.rx != 2:
+                #     sleep(0.1)
+                sleep(5)
+
                 thymio.restart()
                 thymio.set_led(globals.BLUE)
+                thymio.drive(1000, 1000)
+                sleep(1)
 
             elif sensor_state == (0, 0):
                 prox_state = thymio.get_prox_state()
@@ -71,20 +67,22 @@ def main():
                 # ? speed
                 # ? use back sensor to get away from the seeker?
                 if prox_state == (1, 0, 1):
-                    left_motor = -1000
-                    right_motor = 1000
+                    left_motor = -200
+                    right_motor = 200
                 elif prox_state == (0, 0, 1):
-                    left_motor = -1000
-                    right_motor = 1000
+                    left_motor = -200
+                    right_motor = 200
                 elif prox_state == (1, 0, 0) or prox_state == (0, 1, 0):
-                    left_motor = 1000
-                    right_motor = -1000
+                    left_motor = 200
+                    right_motor = -200
                 else:
-                    left_motor = randint(-1000, 1000)
-                    right_motor = randint(-1000, 1000)
+                    left_motor = randint(0, 700)
+                    right_motor = randint(0, 700)
 
             else:
                 print("undefined sensor value: ", sensor_state)
+                left_motor = 500
+                right_motor = 500
 
             if thymio.rx == 1:
                 notTagged = False
@@ -92,7 +90,12 @@ def main():
                 right_motor = 0
                 thymio.set_led(globals.PURPLE
                                )
-            thymio.drive(left_motor, right_motor, time=time)
+
+            thymio.drive(left_motor, right_motor)
+            if time > 0:
+                print('sleeping for ', time)
+            sleep(time)
+            # print('sleeping..')
 
     except KeyboardInterrupt:
         print("Keyboard interrupt")
@@ -102,8 +105,7 @@ def main():
         os.system("pkill -n asebamedulla")
         print("asebamodulla killed")
 
-        thymio.drive(left_motor, right_motor)
-
 
 if __name__ == '__main__':
+    os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
     main()
