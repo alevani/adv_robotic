@@ -38,22 +38,23 @@ class Thymio:
 
     def get_sensor_state(self):
         raw_left, raw_right = self.sense_ground()
+        # print("raw_right", raw_right, "raw_left", raw_left)
         left_state = 0
         right_state = 0
 
         if raw_left > globals.wall_bot_limit and raw_left < globals.wall_top_limit:
             left_state = 1
-        # elif raw_left > globals.safe_zone_bot_limit and raw_left < globals.safe_zone_top_limit:
-        #     left_state = 2
+        elif raw_left > globals.safe_zone_bot_limit and raw_left < globals.safe_zone_top_limit:
+            left_state = 2
         if raw_right > globals.wall_bot_limit and raw_right < globals.wall_top_limit:
             right_state = 1
-        # elif raw_right > globals.safe_zone_bot_limit and raw_right < globals.safe_zone_top_limit:
-        #     right_state = 2
+        elif raw_right > globals.safe_zone_bot_limit and raw_right < globals.safe_zone_top_limit:
+            right_state = 2
         return (left_state, right_state) # 0,1,2 == (nowall, wall, safezone)
 
     def drive(self, l, r, time=0):
         self.asebaNetwork.SendEventName('motor.target', [l, r])
-        sleep(time)
+        # sleep(time)
 
     def set_led(self, color: str):
         # TODO
