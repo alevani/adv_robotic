@@ -10,10 +10,12 @@ def find_best_prey():
 
 
 def main():
+
     thymio = Thymio()
     thymio.set_info_to_send(1)
     thymio.set_led(globals.RED)
     notTagged = True
+
     try:
         while notTagged:
             sensor_state = thymio.get_sensor_state()
@@ -48,23 +50,23 @@ def main():
                 right_motor = -500
 
             elif sensor_state == (0, 0):
-                area, doc, dob = find_best_prey()
+                area, d2c, d2b = find_best_prey()
 
                 left_motor = 1000
                 right_motor = 1000
 
-                if (area, doc, dob) == (None, None, None):  # No pray upfront
+                if (area, d2c, d2b) == (None, None, None):  # No pray upfront
                     left_motor = randint(0, 1000)
                     right_motor = randint(0, 1000)
                 else:
-                    value_to_decrease = doc * 1000 / globals.MAX_DOC
+                    value_to_decrease = d2c * 1000 / globals.MAX_DOC
 
-                    if doc == 0:
+                    if d2c == 0:
                         left_motor = 1000
                         right_motor = 1000
-                    if doc < 0:
+                    if d2c < 0:
                         left_motor = 1000 - value_to_decrease
-                    elif doc > 0:
+                    elif d2c > 0:
                         right_motor = 1000 - value_to_decrease
 
             else:
