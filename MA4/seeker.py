@@ -5,6 +5,10 @@ import globals
 import os
 
 
+def find_best_prey():
+    return 0, 0, 0
+
+
 def main():
     thymio = Thymio()
     thymio.set_info_to_send(1)
@@ -44,27 +48,24 @@ def main():
                 right_motor = -500
 
             elif sensor_state == (0, 0):
-                prox_state = thymio.get_prox_state()
+                area, doc, dob = find_best_prey()
 
-                # ? add time
-                # ? speed
-                # ? use back sensor to get away from the seeker?
-                if prox_state == (1, 0, 1):
-                    left_motor = 1000
-                    right_motor = -1000
-                elif prox_state == (0, 0, 1):
-                    left_motor = 1000
-                    right_motor = -1000
-                elif prox_state == (1, 0, 0):
-                    left_motor = -1000
-                    right_motor = 1000
-                elif prox_state == (0, 1, 0):
-                    left_motor = 1000
-                    right_motor = 1000
+                left_motor = 1000
+                right_motor = 1000
 
-                else:
+                if (area, doc, dob) == (None, None, None):  # No pray upfront
                     left_motor = randint(0, 1000)
                     right_motor = randint(0, 1000)
+                else:
+                    value_to_decrease = doc * 1000 / globals.MAX_DOC
+
+                    if doc == 0:
+                        left_motor = 1000
+                        right_motor = 1000
+                    if doc < 0:
+                        left_motor = 1000 - value_to_decrease
+                    elif doc > 0:
+                        right_motor = 1000 - value_to_decrease
 
             else:
                 print("undefined sensor value: ", sensor_state)
