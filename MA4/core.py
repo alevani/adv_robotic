@@ -14,49 +14,51 @@ def main():
     try:
         while notTagged:
             sensor_state = thymio.get_sensor_state()
-            time = 0 #
+            time = 0
             if 1 in sensor_state:
                 if sensor_state == (1, 0) or sensor_state == (1, 2):
-                    left_motor  =  500
+                    left_motor = 500
                     right_motor = -500
-                    time=0.4
+                    time = 0.4
                     print('\n motors', left_motor, right_motor)
                     print('sensors', sensor_state)
 
-                elif sensor_state == (0, 1) or sensor_state == (2, 1) :
-                    left_motor  = -500
-                    right_motor =  500
+                elif sensor_state == (0, 1) or sensor_state == (2, 1):
+                    left_motor = -500
+                    right_motor = 500
                     print('\n motors', left_motor, right_motor)
                     print('sensors', sensor_state)
-                    time=0.4
+                    time = 0.4
 
                 elif sensor_state == (1, 1):
-                    left_motor  =  500
+                    left_motor = 500
                     right_motor = -500
-                    time=1.2
+                    time = 1.2
                     print('\n motors', left_motor, right_motor)
                     print('sensors', sensor_state)
 
                 else:
                     print("undefined sensor value: ", sensor_state)
 
+            elif sensor_state == (2, 2):  # avoider
+                # drive in the zone
+                thymio.drive(1000, 1000)
+                sleep(1)
 
-            elif sensor_state == (2, 2): # avoider
                 left_motor = 0
                 right_motor = 0
                 thymio.stop()
                 thymio.set_led(globals.GREEN)
                 thymio.set_info_to_send(1000)
 
-                while thymio.rx != 2:
-                    sleep(0.1)
-                thymio.drive(1000, 1000,  3)
+                # while thymio.rx != 2:
+                #     sleep(0.1)
+                sleep(5)
+
                 thymio.restart()
                 thymio.set_led(globals.BLUE)
-                sleep(0.1)
-                thymio.drive(1000, 1000,  3)
-                thymio.restart()
-                thymio.set_led(globals.BLUE)
+                thymio.drive(1000, 1000)
+                sleep(1)
 
             elif sensor_state == (0, 0):
                 prox_state = thymio.get_prox_state()
@@ -65,23 +67,21 @@ def main():
                 # ? speed
                 # ? use back sensor to get away from the seeker?
                 if prox_state == (1, 0, 1):
-                    left_motor = -500
-                    right_motor = 500
+                    left_motor = -200
+                    right_motor = 200
                 elif prox_state == (0, 0, 1):
-                    left_motor = -500
-                    right_motor = 500
+                    left_motor = -200
+                    right_motor = 200
                 elif prox_state == (1, 0, 0) or prox_state == (0, 1, 0):
-                    left_motor = 500
-                    right_motor = -500
+                    left_motor = 200
+                    right_motor = -200
                 else:
-                    left_motor =  randint(0, 500)
-                    right_motor = randint(0, 500)
-
-
+                    left_motor = randint(0, 700)
+                    right_motor = randint(0, 700)
 
             else:
                 print("undefined sensor value: ", sensor_state)
-                left_motor =  500
+                left_motor = 500
                 right_motor = 500
 
             if thymio.rx == 1:
@@ -90,9 +90,9 @@ def main():
                 right_motor = 0
                 thymio.set_led(globals.PURPLE
                                )
- 
+
             thymio.drive(left_motor, right_motor)
-            if time > 0 :
+            if time > 0:
                 print('sleeping for ', time)
             sleep(time)
             # print('sleeping..')
@@ -100,7 +100,7 @@ def main():
     except KeyboardInterrupt:
         print("Keyboard interrupt")
         print("Stopping robot")
-        thymio.drive(0,0)
+        thymio.drive(0, 0)
         sleep(1)
         os.system("pkill -n asebamedulla")
         print("asebamodulla killed")

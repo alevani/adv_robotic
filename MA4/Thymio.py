@@ -48,7 +48,7 @@ class Thymio:
         threading.Timer(.1, self.receiveInformation).start()
 
     def restart(self):
-        threading.Timer(5, self.set_info_to_send, 2).start()
+        threading.Timer(5, self.set_info_to_send, [2]).start()
 
    ###################################
 
@@ -62,13 +62,15 @@ class Thymio:
         self.SL = self.prox_horizontal[0]  # Sensor Left
         self.SR = self.prox_horizontal[4]  # Sensor Right
 
-        if self.SL > 2000 and self.SR > 2000:
+        detect = 10
+
+        if self.SL > detect and self.SR > detect:
             return (1, 0, 1)
-        elif self.SR > 2000:
+        elif self.SR > detect:
             return (0, 0, 1)
-        elif self.SL > 2000:
+        elif self.SL > detect:
             return (1, 0, 0)
-        elif self.SC > 2000:
+        elif self.SC > detect:
             return (0, 1, 0)
         else:
             return (0, 0, 0)
@@ -105,7 +107,7 @@ class Thymio:
             right_state = 1
         elif raw_right > globals.safe_zone_bot_limit and raw_right < globals.safe_zone_top_limit:
             right_state = 2
-        return (left_state, right_state) # 0,1,2 == (nowall, wall, safezone)
+        return (left_state, right_state)  # 0,1,2 == (nowall, wall, safezone)
 
     def drive(self, l, r, time=0):
         self.asebaNetwork.SendEventName('motor.target', [l, r])
