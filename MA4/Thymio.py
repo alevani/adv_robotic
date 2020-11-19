@@ -115,8 +115,8 @@ class Thymio:
         self.asebaNetwork.SendEventName("leds.bottom.right", color)
         self.asebaNetwork.SendEventName("leds.bottom.left", color)
         self.asebaNetwork.SendEventName("leds.top", color)
-        # self.asebaNetwork.SendEventName("led.buttons", color)
-        # self.asebaNetwork.SendEventName("led.color", color)
+        self.asebaNetwork.SendEventName("leds.buttons", color)
+        self.asebaNetwork.SendEventName("leds.color", color)
 
     def stop(self):
         left_wheel = 0
