@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import time
 import utils
+from dataclasses import dataclass
 
 
 def red_mask(hsv_image):
@@ -57,11 +58,29 @@ def find_contours(bicolor_img) -> list:
     conts, hierarchy = cv2.findContours(gray_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     return conts
 
+@dataclass
+class Blob:
+    area: float
+    d2c:  float
+    d2b:  float
+
+
+
+
+def parse_blob(cnt, W, H) -> Blob:
+        cnt_center = utils.get_center(cnt)
+        d2c = cnt_center[0] - W/2
+        d2b = H - cnt_center[1]
+        area = cv2.contourArea(cnt)
+        return Blob(d2c=d2c, d2b=d2b, area=area)
+
+
 def find_blobs(bicolor_img):
     MIN_CNT_AREA = 100
     output = bicolor_img.copy()
     image_height, image_width, _ = output.shape
     cnts = find_contours(bicolor_img)
+    blobs = []
     for cnt in cnts:
         if cv2.contourArea(cnt) > MIN_CNT_AREA:
             center = utils.get_center(cnt)
@@ -69,7 +88,14 @@ def find_blobs(bicolor_img):
             cv2.circle(output, center, 7, (255, 255, 255), -1)
             cv2.line(output, (center[0],image_height), ( center[0],0), (0,255,255), 2)
             cv2.line(output, (image_width,center[1]), (0, center[1]), (255,0,255), 2)
-    utils.show(output)
+            b = parse_blob(cnt, image_width, image_height)
+            blobs.append(b)
+            # print(b)
+            # utils.show(output)
+    return blobs
+
+def find_best_prey(blobs):
+    return sorted(blobs, key=lambda b: b.d2b)[0]
 
 
 def find_biggest_blob(bicolor_img) -> tuple:
@@ -113,17 +139,6 @@ def raspi_take_picture():
     # display the image on screen and wait for a keypress
     return image
 
-def find_colored_blobs(img):
-    detected_colors = []
-    for color, mask_fn in MASKS.items():
-        bicol = apply_mask(img, mask_fn)
-        detected, blob = find_biggest_blob(bicol)
-        if detected:
-            detected_colors.append((color, area, circle ))
-
-    print(detected_colors)
-    return detected_colors
-
 if __name__ == '__main__':
     img = cv2.imread('./img/blue.jpg')
     for color, mask_fn in MASKS.items():
@@ -131,4 +146,8 @@ if __name__ == '__main__':
         img = cv2.imread('./img/{}.jpg'.format(color))
         utils.show(img)
         bicol = apply_mask(img, mask_fn)
-        find_blobs(bicol)
+        blobs = find_blobs(bicol)
+        for b in blobs:
+            print('blob', b)
+        if len(blobs) > 0:
+            print(find_best_prey(blobs))
