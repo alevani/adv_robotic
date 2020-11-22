@@ -8,7 +8,6 @@ from time import sleep
 import utils
 import globals
 from dataclasses import dataclass
-SHOW_IM = True
 SHARED_IMG = None
 
 
@@ -18,16 +17,25 @@ def blue_mask(hsv_image):
     mask = cv2.inRange(hsv_image, dark_blue, light_blue)
     return mask
 
+def green_mask(hsv_image):
+    dark = np.array([75, 100, 200])
+    light = np.array([90, 255, 255])
+    mask = cv2.inRange(hsv_image, dark, light)
+    return mask
 
-def find_contours(bicolor_img) -> list:
+MASK = green_mask
+
+def find_contours(bicolor_img, version_cv2=globals.CV2) -> list:
     bi = bicolor_img.copy()
     THRES_VAL = 60 # move to config?
     gray_img = cv2.cvtColor(bi, cv2.COLOR_BGR2GRAY)
     gray_img = cv2.medianBlur(gray_img, 5)
     ret, im2 = cv2.threshold(gray_img, THRES_VAL, 255, cv2.THRESH_BINARY_INV)
     # raspi and local don't have same cv2 version
-    _, conts, hierarchy = cv2.findContours(gray_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    # conts, hierarchy = cv2.findContours(gray_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    if version_cv2 == 2:
+        _, conts, hierarchy = cv2.findContours(gray_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    else:
+        conts, hierarchy = cv2.findContours(gray_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     return conts
 
 
@@ -46,14 +54,13 @@ def parse_blob(cnt, W, H) -> Blob:
         return Blob(d2c=d2c, d2b=d2b, area=area)
 
 
-def find_blobs(bicolor_img):
-    MIN_CNT_AREA = 5000
+def find_blobs(bicolor_img, show_im=False):
     output = bicolor_img.copy()
     image_height, image_width, _ = output.shape
     cnts = find_contours(bicolor_img)
     blobs = []
     for cnt in cnts:
-        if cv2.contourArea(cnt) > MIN_CNT_AREA:
+        if cv2.contourArea(cnt) > globals.MIN_CNT_AREA:
             center = utils.get_center(cnt)
             cv2.drawContours(output, [cnt], -1, (255, 255, 0), 2)
             cv2.circle(output, center, 7, (255, 255, 255), -1)
@@ -62,9 +69,10 @@ def find_blobs(bicolor_img):
             b = parse_blob(cnt, image_width, image_height)
             blobs.append(b)
             # print(b)
-            # utils.show(output)
-            if SHOW_IM:
-                cv2.imshow('Frame2', output)
+            if show_im:
+                print("show_im", show_im)
+                utils.show(output)
+                # imshow('find_blobs', output)
     return blobs
 
 def find_best_prey(blobs):
@@ -108,7 +116,7 @@ def cam_thread(camera, rawCapture):
         # and occupied/unoccupied text
         image = frame.array
         # show the frame
-        # if SHOW_IM:
+        # if globals.SHOW_IM:
         #     cv2.imshow("Frame", image)
         key = cv2.waitKey(1) & 0xFF
         # clear the stream in preparation for the next frame
@@ -116,7 +124,7 @@ def cam_thread(camera, rawCapture):
         # if the `q` key was pressed, break from the loop
         rotated = cv2.rotate(image, cv2.ROTATE_180)
         SHARED_IMG = rotated.copy()
-        if SHOW_IM:
+        if globals.SHOW_IM:
             if key == ord("q"):
             	break
 
@@ -174,14 +182,14 @@ def find_prey():
         print('SHARED_IMG is None')
         return None
     img = SHARED_IMG.copy()
-    # if SHOW_IM:
+    # if globals.SHOW_IM:
     #     cv2.imshow('raw',img)
-    bicol = apply_mask(img, blue_mask)
-    # if SHOW_IM:
+    bicol = apply_mask(img, MASK)
+    # if globals.SHOW_IM:
     #     cv2.imshow('mask',img)
     #     key = cv2.waitKey(1)
     # utils.show(bicol)
-    if SHOW_IM:
+    if globals.SHOW_IM:
         output = np.hstack((bicol, img))
         cv2.imshow('prey', output)
         # key = cv2.waitKey(1)
@@ -194,7 +202,7 @@ def find_prey():
         return None
 
 def test_pi_cam():
-    # bicol = apply_mask(img, blue_mask)
+    # bicol = apply_mask(img, MASK)
     # blobs = find_blobs(bicol)
     # if len(blobs) > 0:
     #     print(find_best_prey(blobs))
@@ -208,13 +216,13 @@ def test_pi_cam():
         # sleep(0.05)
         frame = raspi_take_picture()
         # Display the resulting frame
-        if SHOW_IM:
+        if globals.SHOW_IM:
             cv2.imshow('Frame',frame)
         current_col = ""
         output = frame.copy()
 
         bicol = {}
-        bicol = apply_mask(frame, blue_mask)
+        bicol = apply_mask(frame, MASK)
         # detected, el = circle_detector(bicol[c])
         # if detected:
         #     current_col += c

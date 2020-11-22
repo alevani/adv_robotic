@@ -1,12 +1,10 @@
+#! /usr/bin/env python3.7
 from Thymio import Thymio
 from random import randint
 from time import sleep
 import globals
+from color_detector import find_prey, Blob, get_width_cam, start_thread_video
 import os
-
-
-def find_best_prey():
-    return 0, 0, 0
 
 
 def main():
@@ -50,24 +48,27 @@ def main():
                 right_motor = -500
 
             elif sensor_state == (0, 0):
-                area, d2c, d2b = find_best_prey()
+                prey = find_prey()
+                print(prey)
 
                 left_motor = 1000
                 right_motor = 1000
 
-                if (area, d2c, d2b) == (None, None, None):  # No pray upfront
+                if prey == None:  # No pray upfront
+                    print("NO PREY, RANDOM ")
                     left_motor = randint(0, 1000)
                     right_motor = randint(0, 1000)
                 else:
-                    value_to_decrease = d2c * 1000 / globals.MAX_DOC
+                    print("PREY FOUND")
+                    value_to_decrease = abs(prey.d2c) * 1000 / globals.MAX_D2C
 
-                    if d2c == 0:
+                    if prey.d2c == 0:
                         left_motor = 1000
                         right_motor = 1000
-                    if d2c < 0:
+                    if prey.d2c < 0:
                         left_motor = 1000 - value_to_decrease
-                    elif d2c > 0:
-                        right_motor = 1000 - value_to_decrease
+                    elif prey.d2c > 0:
+                        right_motor  = 1000 - value_to_decrease
 
             else:
                 print("undefined sensor value: ", sensor_state)
@@ -81,7 +82,9 @@ def main():
                 thymio.set_led(globals.PURPLE
                                )
 
-            thymio.drive(left_motor, right_motor)
+            print("right_motor", right_motor)
+            print("left_motor", left_motor)
+            # thymio.drive(left_motor, right_motor)
             if time > 0:
                 print('sleeping for ', time)
             sleep(time)
@@ -98,4 +101,13 @@ def main():
 
 if __name__ == '__main__':
     os.system("(asebamedulla ser:name=Thymio-II &) && sleep 0.3")
+    print('starting asebamedulla')
+    sleep(1)
+    cam_w = get_width_cam()
+    globals.MAX_D2C = cam_w / 2
+    print(globals.MAX_D2C)
+    print('start threat')
+    start_thread_video()
+    sleep(1)
+    print('start main')
     main()
