@@ -3,12 +3,13 @@ from Thymio import Thymio
 from random import randint
 from time import sleep
 import globals
+from lidar import Lidar
 from color_detector import find_prey, Blob, get_width_cam, start_thread_video
 import os
 
 
 def main():
-
+    l = Lidar()
     thymio = Thymio()
     thymio.set_info_to_send(1)
     thymio.set_led(globals.RED)
@@ -48,6 +49,7 @@ def main():
                 right_motor = -500
 
             elif sensor_state == (0, 0):
+
                 prey = find_prey()
                 print(prey)
 
@@ -56,8 +58,8 @@ def main():
 
                 if prey == None:  # No pray upfront
                     print("NO PREY, RANDOM ")
-                    left_motor = randint(0, 1000)
-                    right_motor = randint(0, 1000)
+
+
                 else:
                     print("PREY FOUND")
                     value_to_decrease = abs(prey.d2c) * 1000 / globals.MAX_D2C
