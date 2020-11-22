@@ -3,8 +3,13 @@
 import cv2 
 import numpy as np
 import time
+import threading
+from time import sleep
 import utils
+import globals
 from dataclasses import dataclass
+SHOW_IM = True
+SHARED_IMG = None
 
 
 def blue_mask(hsv_image):
@@ -16,20 +21,21 @@ def blue_mask(hsv_image):
 
 def find_contours(bicolor_img) -> list:
     bi = bicolor_img.copy()
-    thres_val = 60 # move to config
+    THRES_VAL = 60 # move to config?
     gray_img = cv2.cvtColor(bi, cv2.COLOR_BGR2GRAY)
     gray_img = cv2.medianBlur(gray_img, 5)
-    ret, im2 = cv2.threshold(gray_img, thres_val, 255, cv2.THRESH_BINARY_INV)
-    conts, hierarchy = cv2.findContours(gray_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    ret, im2 = cv2.threshold(gray_img, THRES_VAL, 255, cv2.THRESH_BINARY_INV)
+    # raspi and local don't have same cv2 version
+    _, conts, hierarchy = cv2.findContours(gray_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    # conts, hierarchy = cv2.findContours(gray_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     return conts
+
 
 @dataclass
 class Blob:
     area: float
     d2c:  float
     d2b:  float
-
-
 
 
 def parse_blob(cnt, W, H) -> Blob:
@@ -55,8 +61,10 @@ def find_blobs(bicolor_img):
             cv2.line(output, (image_width,center[1]), (0, center[1]), (255,0,255), 2)
             b = parse_blob(cnt, image_width, image_height)
             blobs.append(b)
-            print(b)
-            utils.show(output)
+            # print(b)
+            # utils.show(output)
+            if SHOW_IM:
+                cv2.imshow('Frame2', output)
     return blobs
 
 def find_best_prey(blobs):
@@ -90,30 +98,167 @@ def apply_mask(bgr_img, mask_fn):
     bicol = cv2.bitwise_and(bgr_img, bgr_img, mask=mask)
     return bicol
 
+def cam_thread(camera, rawCapture):
+    print("   STARTING CAM THREAD \n\n")
+    print("camera", camera)
+    print("rawCapture", rawCapture)
+    for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
+        global SHARED_IMG
+        # grab the raw NumPy array representing the image, then initialize the timestamp
+        # and occupied/unoccupied text
+        image = frame.array
+        # show the frame
+        # if SHOW_IM:
+        #     cv2.imshow("Frame", image)
+        key = cv2.waitKey(1) & 0xFF
+        # clear the stream in preparation for the next frame
+        rawCapture.truncate(0)
+        # if the `q` key was pressed, break from the loop
+        rotated = cv2.rotate(image, cv2.ROTATE_180)
+        SHARED_IMG = rotated.copy()
+        if SHOW_IM:
+            if key == ord("q"):
+            	break
+
+def start_thread_video():
+    from picamera.array import PiRGBArray
+    from picamera import PiCamera
+    # initialize the camera and grab a reference to the raw camera capture
+    camera = PiCamera()
+    RES = (640, 480)
+    camera.resolution = RES
+    camera.framerate = 10
+    rawCapture = PiRGBArray(camera, size=RES)
+    # allow the camera to warmup
+    # grab an image from the camera
+    threading.Thread(target=cam_thread, args=(camera, rawCapture)).start()
+
+    # camera.capture(rawCapture, format="bgr")
+    # image = rawCapture.array
+    # # display the image on screen and wait for a keypress
+    # rotated = cv2.rotate(image, cv2.ROTATE_180)
+    # camera.close()
+    # return rotated
+
+
+
+
 def raspi_take_picture():
     from picamera.array import PiRGBArray
     from picamera import PiCamera
     # initialize the camera and grab a reference to the raw camera capture
     camera = PiCamera()
-    rawCapture = PiRGBArray(camera)
+    RES = (640, 480)
+    camera.resolution = RES
+    camera.framerate = 20
+    rawCapture = PiRGBArray(camera, size=RES)
     # allow the camera to warmup
-    time.sleep(0.1)
+    time.sleep(0.05)
     # grab an image from the camera
     camera.capture(rawCapture, format="bgr")
     image = rawCapture.array
     # display the image on screen and wait for a keypress
-    return image
+    rotated = cv2.rotate(image, cv2.ROTATE_180)
+    camera.close()
+    return rotated
+
+def get_width_cam():
+    img = raspi_take_picture()
+    image_height, image_width, _ = img.shape
+    return image_width 
+
+def find_prey():
+    # img = raspi_take_picture()
+    global SHARED_IMG
+    if SHARED_IMG.all() == None :
+        print('SHARED_IMG is None')
+        return None
+    img = SHARED_IMG.copy()
+    # if SHOW_IM:
+    #     cv2.imshow('raw',img)
+    bicol = apply_mask(img, blue_mask)
+    # if SHOW_IM:
+    #     cv2.imshow('mask',img)
+    #     key = cv2.waitKey(1)
+    # utils.show(bicol)
+    if SHOW_IM:
+        output = np.hstack((bicol, img))
+        cv2.imshow('prey', output)
+        # key = cv2.waitKey(1)
+    blobs = find_blobs(bicol)
+    if len(blobs) > 0:
+        print(find_best_prey(blobs))
+        # return find_best_prey(blobs)
+        return sorted(blobs, key=lambda b: b.d2b)[0]
+    else:
+        return None
+
+def test_pi_cam():
+    # bicol = apply_mask(img, blue_mask)
+    # blobs = find_blobs(bicol)
+    # if len(blobs) > 0:
+    #     print(find_best_prey(blobs))
+    #     # return find_best_prey(blobs)
+    #     return sorted(blobs, key=lambda b: b.d2b)[0]
+    # else:
+    #     return None
+
+    paused = False
+    while(True):
+        # sleep(0.05)
+        frame = raspi_take_picture()
+        # Display the resulting frame
+        if SHOW_IM:
+            cv2.imshow('Frame',frame)
+        current_col = ""
+        output = frame.copy()
+
+        bicol = {}
+        bicol = apply_mask(frame, blue_mask)
+        # detected, el = circle_detector(bicol[c])
+        # if detected:
+        #     current_col += c
+        #     cv2.ellipse(output, el, rgb_color[c], 5)
+        # current_col += '\t'
+        blobs = find_blobs(bicol)
+
+        output = np.hstack((output, frame))
+
+        # cv2.imshow('Frame', output)
+        if len(blobs) > 0:
+            left_motor  = 0
+            right_motor = 0
+            prey = find_best_prey(blobs)
+            print("BEST", prey  )
+            value_to_decrease = prey.d2c * 1000 / globals.MAX_D2C
+            if prey.d2c == 0:
+                left_motor = 1000
+                right_motor = 1000
+            if prey.d2c < 0:
+                left_motor = 1000 - value_to_decrease
+            elif prey.d2c > 0:
+                right_motor = 1000 - value_to_decrease
+            print(left_motor, right_motor)
+
+
+        else:
+            print("NO BLOBS")
+
+        if not paused:
+            key = cv2.waitKey(1)
+            if key == ord('q'):
+                break
+            if key == ord('p'):
+                cv2.waitKey(-1)  # wait until any key is pressed
+                paused = True
+
+        if paused:
+            key = cv2.waitKey(0)
+            if key == ord('q'):
+                break
+            if key == ord('p'):
+                # cv2.waitKey(-1) #wait until any key is pressed
+                paused = False
 
 if __name__ == '__main__':
-    img = cv2.imread('./img/b.jpg')
-    for i in range(1, 4):
-        ip =  './img/b/{}.png'.format(i)
-        print(i, ip)
-        img = cv2.imread(ip)
-        utils.show(img)
-        bicol = apply_mask(img, blue_mask)
-        blobs = find_blobs(bicol)
-        for b in blobs:
-            print('blob', b)
-        if len(blobs) > 0:
-            print(find_best_prey(blobs))
+    test_pi_cam()
