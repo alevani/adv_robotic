@@ -16,4 +16,4 @@ MAX_D2C = 200
 MIN_CNT_AREA = 10
 
 CV2 = 2
-SHOW_IM = True
+SHOW_IM = False

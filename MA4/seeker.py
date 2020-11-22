@@ -1,6 +1,7 @@
 #! /usr/bin/env python3.7
 from Thymio import Thymio
 from random import randint
+import numpy as np
 from time import sleep
 import globals
 from lidar import Lidar
@@ -57,7 +58,26 @@ def main():
                 right_motor = 1000
 
                 if prey == None:  # No pray upfront
-                    print("NO PREY, RANDOM ")
+                    print("NO PREY, LIDAR ")
+                    left_motor = 500
+                    right_motor = 500
+                    time = 0.1
+                    data = l.get_scan_data()
+                    index = np.argmin(data)
+
+                    if index < 180:
+                        new_index = 180 - index
+                        shift = (new_index * 500 / 180)  #  500 or 0 1000 or 0
+                        shift *= 2
+                        right_motor += shift
+                        left_motor -= shift
+                    elif index > 179:
+                        new_index = index - 180
+                        shift = (new_index * 500 / 180)
+                        shift *= 2
+                        right_motor -= shift
+                        left_motor += shift
+
 
 
                 else:
@@ -86,7 +106,7 @@ def main():
 
             print("right_motor", right_motor)
             print("left_motor", left_motor)
-            # thymio.drive(left_motor, right_motor)
+            thymio.drive(left_motor, right_motor)
             if time > 0:
                 print('sleeping for ', time)
             sleep(time)
