@@ -31,7 +31,7 @@ class Thymio:
         self.sendInformation()
         self.receiveInformation()
 
-    ######### COMMUNICATION #########
+    #########COMMUNICATION#########
     def set_info_to_send(self, value):
         self.info_to_send = value
 
@@ -61,7 +61,8 @@ class Thymio:
         self.SC = self.prox_horizontal[2]  # Sensor Central
         self.SL = self.prox_horizontal[0]  # Sensor Left
         self.SR = self.prox_horizontal[4]  # Sensor Right
-
+        self.BL = self.prox_horizontal[5]
+        self.BR = self.prox_horizontal[6]
         detect = 10
 
         if self.SL > detect and self.SR > detect:
@@ -72,6 +73,8 @@ class Thymio:
             return (1, 0, 0)
         elif self.SC > detect:
             return (0, 1, 0)
+        elif self.BL > detect or self.BR > detect:
+            return (1, 1, 1)
         else:
             return (0, 0, 0)
 
