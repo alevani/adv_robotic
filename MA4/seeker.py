@@ -17,7 +17,7 @@ def main():
     try:
         while notTagged:
             sensor_state = thymio.get_sensor_state()
-            time = 0
+            time = 0.2
             if 1 in sensor_state:
                 if sensor_state == (1, 0) or sensor_state == (1, 2):
                     left_motor = 500
