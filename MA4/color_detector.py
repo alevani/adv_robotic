@@ -23,6 +23,12 @@ def green_mask(hsv_image):
     mask = cv2.inRange(hsv_image, dark, light)
     return mask
 
+def purple_mask(hsv_image):
+    dark = np.array([140, 100, 200])
+    light = np.array([160, 255, 255])
+    mask = cv2.inRange(hsv_image, dark, light)
+    return mask
+
 MASK = green_mask
 
 def find_contours(bicolor_img, version_cv2=globals.CV2) -> list:

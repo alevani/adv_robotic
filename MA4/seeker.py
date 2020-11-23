@@ -10,11 +10,12 @@ import os
 
 
 def main():
-    l = Lidar()
+    # l = Lidar()
     thymio = Thymio()
     thymio.set_info_to_send(1)
     thymio.set_led(globals.RED)
     notTagged = True
+    LAST_D2C = 0
 
     try:
         while notTagged:
@@ -59,24 +60,24 @@ def main():
 
                 if prey == None:  # No pray upfront
                     print("NO PREY, LIDAR ")
-                    left_motor = 500
+                    left_motor = - 500
                     right_motor = 500
                     time = 0.1
-                    data = l.get_scan_data()
-                    index = np.argmin(data)
+                    # data = l.get_scan_data()
+                    # index = np.argmin(data)
 
-                    if index < 180:
-                        new_index = 180 - index
-                        shift = (new_index * 500 / 180)  #  500 or 0 1000 or 0
-                        shift *= 2
-                        right_motor += shift
-                        left_motor -= shift
-                    elif index > 179:
-                        new_index = index - 180
-                        shift = (new_index * 500 / 180)
-                        shift *= 2
-                        right_motor -= shift
-                        left_motor += shift
+                    # if index < 180:
+                    #     new_index = 180 - index
+                    #     shift = (new_index * 500 / 180)  #  500 or 0 1000 or 0
+                    #     shift *= 2
+                    #     right_motor += shift
+                    #     left_motor -= shift
+                    # elif index > 179:
+                    #     new_index = index - 180
+                    #     shift = (new_index * 500 / 180)
+                    #     shift *= 2
+                    #     right_motor -= shift
+                    #     left_motor += shift
 
 
 

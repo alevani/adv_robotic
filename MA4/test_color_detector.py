@@ -1,3 +1,4 @@
+#! /usr/bin/env python3.7
 from color_detector import *
 from utils import show
 import pytest
@@ -5,9 +6,10 @@ import globals
 
 def test_4color_image():
     output = []
-    for i in range(1,8):
-        img = cv2.imread('../greenscrot/{}.png'.format(i))
-        bicol = apply_mask(img, green_mask)
+    for i in range(0,4):
+        print(i)
+        img = cv2.imread('../../img/{}.png'.format(i))
+        bicol = apply_mask(img, MASK)
         # show( bicol, str(i))
         # print("circle detected: ", detected)
         blob = find_blobs(bicol,show_im=True)
