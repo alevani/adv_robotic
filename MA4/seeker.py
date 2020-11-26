@@ -21,6 +21,8 @@ def main():
         while notTagged:
             sensor_state = thymio.get_sensor_state()
             time = 0.2
+
+            # BORDER AVOIDANCE
             if 1 in sensor_state:
                 if sensor_state == (1, 0) or sensor_state == (1, 2):
                     left_motor = 500
@@ -46,10 +48,12 @@ def main():
                 else:
                     print("undefined sensor value: ", sensor_state)
 
+            # SAFE ZONE AVOIDANCE
             elif sensor_state == (2, 2):  # avoider
                 left_motor = 500
                 right_motor = -500
 
+            # MAIN LOGIC
             elif sensor_state == (0, 0):
 
                 prey = find_prey()
@@ -58,11 +62,17 @@ def main():
                 left_motor = 1000
                 right_motor = 1000
 
-                if prey == None:  # No pray upfront
-                    print("NO PREY, LIDAR ")
-                    left_motor = - 500
-                    right_motor = 500
+                if prey is None:  # No pray upfront
+                    print("NO PREY, RANDOM")
+                    if LAST_D2C < 0:
+                        left_motor  = -500
+                        right_motor =  500
+                    else:
+                        left_motor  =  500
+                        right_motor = -500
+
                     time = 0.1
+
                     # data = l.get_scan_data()
                     # index = np.argmin(data)
 
@@ -79,31 +89,28 @@ def main():
                     #     right_motor -= shift
                     #     left_motor += shift
 
-
-
                 else:
                     print("PREY FOUND")
-                    value_to_decrease = abs(prey.d2c) * 1000 / globals.MAX_D2C
+                    value_to_decrease = 1000 * abs(prey.d2c) / globals.MAX_D2C
 
                     if prey.d2c == 0:
-                        left_motor = 1000
+                        left_motor  = 1000
                         right_motor = 1000
                     if prey.d2c < 0:
-                        left_motor = 1000 - value_to_decrease
+                        left_motor  = 1000 - value_to_decrease
                     elif prey.d2c > 0:
-                        right_motor  = 1000 - value_to_decrease
+                        right_motor = 1000 - value_to_decrease
 
             else:
-                print("undefined sensor value: ", sensor_state)
-                left_motor = 500
+                print("\n\n\n UNDEFINED SENSOR VALUE: ", sensor_state)
+                left_motor  = 500
                 right_motor = 500
 
             if thymio.rx == 1:
-                notTagged = False
-                left_motor = 0
+                notTagged   = False
+                left_motor  = 0
                 right_motor = 0
-                thymio.set_led(globals.PURPLE
-                               )
+                thymio.set_led(globals.PURPLE)
 
             print("right_motor", right_motor)
             print("left_motor", left_motor)
