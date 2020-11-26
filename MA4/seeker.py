@@ -18,6 +18,7 @@ def main():
     thymio.set_led(globals.RED)
     notTagged = True
     LAST_D2C = 0
+    MAX_SPEED = 500
 
     try:
         while notTagged:
@@ -64,8 +65,8 @@ def main():
                 prey = find_prey()
                 print(prey)
 
-                left_motor = 1000
-                right_motor = 1000
+                left_motor = MAX_SPEED
+                right_motor = MAX_SPEED
 
                 if prey is None:  # No pray upfront
                     print("NO PREY, RANDOM")
@@ -84,7 +85,7 @@ def main():
 
                     # if index < 180:
                     #     new_index = 180 - index
-                    #     shift = (new_index * 500 / 180)  #  500 or 0 1000 or 0
+                    #     shift = (new_index * 500 / 180)  #  500 or 0 MAX_SPEED or 0
                     #     shift *= 2
                     #     right_motor += shift
                     #     left_motor -= shift
@@ -97,15 +98,15 @@ def main():
 
                 else:
                     print("PREY FOUND")
-                    value_to_decrease = 1000 * abs(prey.d2c) / globals.MAX_D2C
+                    value_to_decrease = MAX_SPEED * abs(prey.d2c) / globals.MAX_D2C
 
                     if prey.d2c == 0:
-                        left_motor  = 1000
-                        right_motor = 1000
+                        left_motor  = MAX_SPEED
+                        right_motor = MAX_SPEED
                     if prey.d2c < 0:
-                        left_motor  = 1000 - value_to_decrease
+                        left_motor  = MAX_SPEED - value_to_decrease
                     elif prey.d2c > 0:
-                        right_motor = 1000 - value_to_decrease
+                        right_motor = MAX_SPEED - value_to_decrease
             else:
                 print("\n\n\n UNDEFINED SENSOR VALUE: ", sensor_state)
                 left_motor  = 500
