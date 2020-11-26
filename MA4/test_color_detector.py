@@ -3,6 +3,7 @@ from color_detector import *
 from utils import show
 import pytest
 import globals
+MIN_CNT_AREA = 100
 
 def test_4color_image():
     output = []

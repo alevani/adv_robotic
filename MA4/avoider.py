@@ -2,11 +2,14 @@
 from Thymio import Thymio
 from random import randint
 from time import sleep
+from lidar import Lidar
+import numpy as np
 import globals
 import os
 
 
 def main():
+    l = Lidar()
     thymio = Thymio()
     thymio.set_info_to_send(2)
     thymio.set_led(globals.BLUE)
@@ -43,12 +46,12 @@ def main():
             elif sensor_state == (2, 2):  # avoider
                 # drive in the zone
                 thymio.drive(1000, 1000)
-                sleep(1)
+                sleep(0.3)
 
                 left_motor = 0
                 right_motor = 0
                 thymio.stop()
-                thymio.set_led(globals.GREEN)
+                thymio.set_led(globals.ORANGE)
                 thymio.set_info_to_send(1000)
 
                 # while thymio.rx != 2:
@@ -56,29 +59,28 @@ def main():
                 sleep(5)
 
                 thymio.restart()
-                thymio.set_led(globals.BLUE)
+                thymio.set_led(globals.GREEN)
                 thymio.drive(1000, 1000)
                 sleep(1)
 
             elif sensor_state == (0, 0):
-                prox_state = thymio.get_prox_state()
-
-                # ? add time
-                # ? speed
-                # ? use back sensor to get away from the seeker?
-                if prox_state == (1, 0, 1):
-                    left_motor = -200
-                    right_motor = 200
-                elif prox_state == (0, 0, 1):
-                    left_motor = -200
-                    right_motor = 200
-                elif prox_state == (1, 0, 0) or prox_state == (0, 1, 0):
-                    left_motor = 200
-                    right_motor = -200
-                else:
-                    left_motor = randint(0, 700)
-                    right_motor = randint(0, 700)
-
+                left_motor = 1000
+                right_motor = 1000
+                time = 0.1
+                data = l.get_scan_data()
+                index = np.argmin(data)
+                # 1000 - ((180 - 90) * 1000 / 180)
+                if index < 180:
+                    new_index = 180 - index
+                    right_motor = (new_index * 1000 / 180)
+                    print("LEFT")
+                elif index > 179:
+                    new_index = index - 180
+                    left_motor = (new_index * 1000 / 180)
+                    print("RIGHT")
+                print("index: ", new_index)
+                print("power left: ", left_motor)
+                print("power right: ", right_motor)
             else:
                 print("undefined sensor value: ", sensor_state)
                 left_motor = 500

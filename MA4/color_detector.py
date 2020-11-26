@@ -275,4 +275,15 @@ def test_pi_cam():
                 paused = False
 
 if __name__ == '__main__':
-    test_pi_cam()
+    img = cv2.imread('./img/b.jpg')
+    for i in range(1, 4):
+        ip =  './img/b/{}.png'.format(i)
+        print(i, ip)
+        img = cv2.imread(ip)
+        utils.show(img)
+        bicol = apply_mask(img, blue_mask)
+        blobs = find_blobs(bicol)
+        for b in blobs:
+            print('blob', b)
+        if len(blobs) > 0:
+            print(find_best_prey(blobs))

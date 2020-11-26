@@ -3,6 +3,8 @@ from Thymio import Thymio
 from random import randint
 import numpy as np
 from time import sleep
+import numpy as np
+from lidar import Lidar
 import globals
 from lidar import Lidar
 from color_detector import find_prey, Blob, get_width_cam, start_thread_video
@@ -27,6 +29,7 @@ def main():
                 if sensor_state == (1, 0) or sensor_state == (1, 2):
                     left_motor = 500
                     right_motor = -500
+
                     time = 0.4
                     print('\n motors', left_motor, right_motor)
                     print('sensors', sensor_state)
@@ -34,6 +37,7 @@ def main():
                 elif sensor_state == (0, 1) or sensor_state == (2, 1):
                     left_motor = -500
                     right_motor = 500
+
                     print('\n motors', left_motor, right_motor)
                     print('sensors', sensor_state)
                     time = 0.4
@@ -41,6 +45,7 @@ def main():
                 elif sensor_state == (1, 1):
                     left_motor = 500
                     right_motor = -500
+
                     time = 1.2
                     print('\n motors', left_motor, right_motor)
                     print('sensors', sensor_state)
@@ -73,6 +78,7 @@ def main():
 
                     time = 0.1
 
+
                     # data = l.get_scan_data()
                     # index = np.argmin(data)
 
@@ -100,7 +106,6 @@ def main():
                         left_motor  = 1000 - value_to_decrease
                     elif prey.d2c > 0:
                         right_motor = 1000 - value_to_decrease
-
             else:
                 print("\n\n\n UNDEFINED SENSOR VALUE: ", sensor_state)
                 left_motor  = 500
