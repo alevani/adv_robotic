@@ -49,7 +49,7 @@ class Thymio:
 
     def restart(self):
         threading.Timer(5, self.set_info_to_send, [2]).start()
-
+        threading.Timer(5, self.set_led, [globals.RED]).start()
    ###################################
 
     def sense(self):
@@ -98,6 +98,7 @@ class Thymio:
 
     def get_sensor_state(self):
         raw_left, raw_right = self.sense_ground()
+        print(raw_left, raw_right)
         # print("raw_right", raw_right, "raw_left", raw_left)
         left_state = 0
         right_state = 0

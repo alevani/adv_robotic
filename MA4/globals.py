@@ -1,7 +1,7 @@
 wall_bot_limit = 0
 wall_top_limit = 249
-safe_zone_bot_limit = 250
-safe_zone_top_limit = 350
+safe_zone_bot_limit = 450
+safe_zone_top_limit = 560
 
 
 BLUE = [0, 0, 255]
